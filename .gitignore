@@ -1,0 +1,29 @@
+# pytho bytecode & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# virtual environment
+.venv/
+venv/
+env/
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Alembic
+alembic/versions/*.pyc
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
