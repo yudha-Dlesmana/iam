@@ -49,18 +49,22 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def apply_migrations(connection):
+    context.configure(connection=connection, target_metadata=target_metadata)
+    with context.begin_transaction():
+        context.run_migrations()
+
+
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
-    """   
+    """
     engine = create_async_engine(settings.DB_URL)
     async with engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-        with context.begin_transaction():
-            context.run_migrations()
+        await connection.run_sync(apply_migrations)
     await engine.dispose()
 
 
