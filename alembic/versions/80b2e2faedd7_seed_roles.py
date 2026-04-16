@@ -30,4 +30,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute("DELETE FORM roles WHERE name IN ('admin', 'user')")
+    op.execute("DELETE FROM roles WHERE name IN ('admin', 'user')")
