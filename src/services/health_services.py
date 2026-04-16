@@ -1,15 +1,15 @@
 import asyncio
-from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, DatabaseError
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.repositories.health_repository import HealthRepository
 
 class HealthService:
-    def __init__(self, db:AsyncSession):
-        self.db = db
+    def __init__(self, repo: HealthRepository):
+        self.repo = repo
 
     async def check_database(self) -> str:
         try:
-            await self.db.execute(text("SELECT 1"))
+            await self.repo.check_db()
             return "connected"
         except OperationalError as e:
             return f"unavailable: connection error: {str(e.orig)}"
