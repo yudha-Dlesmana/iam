@@ -1,17 +1,21 @@
-import os
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse
-from sqlalchemy import text
 
-from src.core.database import engine
+import src.models
+from src.core.exception_handler import http_exception_handler, validation_exception_handler
 from src.routers.health_router import router as health_router
+from src.routers.role_router import router as role_router
 
 
 app = FastAPI()
+
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 @app.get("/", include_in_schema=False)
 def default():
     return RedirectResponse("/docs")
 
 app.include_router(health_router)
+app.include_router(role_router)
