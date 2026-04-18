@@ -66,7 +66,10 @@ class UserService:
         data=UserResponse.model_validate(user)
         return BaseResponse(message="User updated", data=data)
 
-    async def delete_user(self, user_id: str) -> BaseResponse[None]:
+    async def delete_user(
+        self, 
+        user_id: str
+    ) -> BaseResponse[None]:
         deleted = await self.repo.delete_user(user_id)
 
         if not deleted:
