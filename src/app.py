@@ -1,19 +1,14 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.exceptions import RequestValidationError
+from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from sqlalchemy.exc import IntegrityError, OperationalError
 
 import src.models
-from src.core.exception_handler import http_exception_handler, validation_exception_handler, integrity_error_handler, operational_error_handler
+from src.core.exception_handler import register_exception_handlers
 from src.routers.api_router import api_router
 
 
 app = FastAPI()
 
-app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(IntegrityError, integrity_error_handler)
-app.add_exception_handler(OperationalError, operational_error_handler)
+register_exception_handlers(app)
 
 @app.get("/", include_in_schema=False)
 def default():

@@ -16,7 +16,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         ).model_dump()
     )
 
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_error_handler(request: Request, exc: RequestValidationError):
     errors = [
         f"{' -> '.join(str(loc) for loc in err['loc'])}: {err['msg']}"
         for err in exc.errors()
@@ -61,3 +61,18 @@ async def operational_error_handler(_request: Request, _exc: OperationalError):
         status_code=503,
         content=BaseResponse(success=False, message="Database unavailable", data=None).model_dump()
     )
+
+# -- Handler Registration --
+
+from fastapi import FastAPI
+
+def register_exception_handlers(app: FastAPI) -> None:
+    handlers = [
+        (HTTPException, http_exception_handler),
+        (RequestValidationError, validation_error_handler),
+        (IntegrityError, integrity_error_handler),
+        (OperationalError, operational_error_handler),
+    ]
+
+    for exc_class, handler in handlers:
+        app.add_exception_handler(exc_class, handler)
