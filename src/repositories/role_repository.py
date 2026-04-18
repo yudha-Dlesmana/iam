@@ -8,7 +8,7 @@ class RoleRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
     
-    async def get_all(self) -> list[Role]:
+    async def get_all_role(self) -> list[Role]:
         result = await self.db.execute(select(Role))
 
         return list(result.scalars().all())
