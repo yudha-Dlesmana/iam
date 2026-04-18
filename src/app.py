@@ -4,8 +4,7 @@ from fastapi.responses import RedirectResponse
 
 import src.models
 from src.core.exception_handler import http_exception_handler, validation_exception_handler
-from src.routers.health_router import router as health_router
-from src.routers.role_router import router as role_router
+from src.routers.api_router import api_router
 
 
 app = FastAPI()
@@ -17,5 +16,4 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 def default():
     return RedirectResponse("/docs")
 
-app.include_router(health_router)
-app.include_router(role_router)
+app.include_router(api_router)
