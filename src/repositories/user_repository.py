@@ -8,7 +8,7 @@ class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
     
-    async def get_all_user(self) -> list[User]:
+    async def get_all_users(self) -> list[User]:
         result = await self.db.execute(select(User))
 
         return list(result.scalars().all())
