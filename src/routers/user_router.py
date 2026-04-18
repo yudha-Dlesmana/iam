@@ -1,10 +1,8 @@
-from src.schemas.user_schema import UpdatePasswordRequest
-from src.schemas.user_schema import UpdateRoleRequest
 from fastapi import APIRouter, Depends
 
 from src.core.dependency import get_user_service
 from src.schemas.base_schema import BaseResponse
-from src.schemas.user_schema import UserResponse, UserRequest, UserUpdateRequest
+from src.schemas.user_schema import UserResponse, UserCreateRequest, UserUpdateRequest
 from src.services.user_service import UserService
 
 router = APIRouter(prefix="/user", tags=["Users"])
@@ -47,34 +45,22 @@ async def get_user_by_email(
     response_model=BaseResponse[UserResponse]
 )
 async def create_user(
-    request: UserRequest,
+    request: UserCreateRequest,
     service: UserService = Depends(get_user_service)
 ):
     return await service.create_user(request)
 
 @router.put(
-    "/{user_id}/role",
+    "/{user_id}",
     status_code=200,
     response_model=BaseResponse[UserResponse]
 )
-async def update_user_role(
+async def update_user(
     user_id: str,
-    request: UpdateRoleRequest,
+    request: UserUpdateRequest,
     service: UserService = Depends(get_user_service)
 ):
-    return await service.update_role_user(user_id, request)
-
-@router.put(
-    "/{user_id}/password",
-    status_code=200,
-    response_model=BaseResponse[UserResponse]
-)
-async def update_user_password(
-    user_id: str,
-    request: UpdatePasswordRequest,
-    service: UserService = Depends(get_user_service)
-):
-    return await service.update_password_user(user_id, request)
+    return await service.update_user(user_id, request)
 
 @router.delete(
     "/{user_id}",
