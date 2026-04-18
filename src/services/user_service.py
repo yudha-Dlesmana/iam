@@ -12,15 +12,16 @@ class UserService:
 
     async def get_all_users(self) -> BaseResponse[list[UserResponse]]:
         try:
-            users = await self.repo.get_all_user()
+            users = await self.repo.get_all_users()
             data = [UserResponse.model_validate(user) for user in users]
-            return BaseResponse(
-                message="User fetched",
-                data=data
-            )
 
         except OperationalError:
             raise HTTPException(status_code=503, detail="Database unavailable")
+
+        return BaseResponse(
+                message="User fetched",
+                data=data
+            )
 
     async def get_user_by_id(self, user_id: str) -> BaseResponse[UserResponse]:
         try:
