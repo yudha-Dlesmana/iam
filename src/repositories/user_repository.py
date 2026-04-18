@@ -6,7 +6,8 @@ from src.schemas.user_schema import UserCreateRequest, UserUpdateRequest
 
 class UserRepository:
     def __init__(
-        self, db: AsyncSession
+        self, 
+        db: AsyncSession
     ):
         self.db = db
     
