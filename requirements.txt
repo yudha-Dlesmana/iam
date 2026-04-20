@@ -16,7 +16,7 @@ PyMySQL>=1.1.0                      # Sync MySQL driver (used by Alembic)
 
 # Auth
 python-jose[cryptography]>=3.3.0    # JWT tokens
-passlib[bcrypt]>=1.7.4              # Password hashing
+argon2-cffi>=23.1.0                 # Password hashing
 python-multipart>=0.0.20            # Form data / file uploads
 
 # HTTP client (for calling external APIs)
