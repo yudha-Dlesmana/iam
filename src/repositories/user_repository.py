@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.user import User
 from src.schemas.user_schema import UserCreateRequest, UserUpdateRequest
 
+
 class UserRepository:
     def __init__(
         self, 

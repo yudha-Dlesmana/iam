@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.role import Role
 from src.schemas.role_schema import RoleRequest
 
+
 class RoleRepository:
     def __init__(
         self, 
