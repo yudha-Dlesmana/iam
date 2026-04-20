@@ -64,7 +64,13 @@ class UserService:
         self, 
         request: UserCreateRequest
     ) -> BaseResponse[UserResponse]:
-        user = await self.repo.create_user(request)
+        hashed_password = request.password
+        new_user = UserCreateRequest(
+            email=request.email,
+            password=hashed_password,
+            role_id=request.role_id
+        )
+        user = await self.repo.create_user(new_user)
 
         return BaseResponse(
             message="User created", 

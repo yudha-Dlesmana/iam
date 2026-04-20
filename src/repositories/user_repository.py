@@ -41,19 +41,19 @@ class UserRepository:
 
     async def create_user( 
         self, 
-        request: UserCreateRequest 
+        new_user: UserCreateRequest 
     ) -> User:
-        new_user = User(
-            email=request.email,
-            password=request.password,
-            role_id=request.role_id,
+        user = User(
+            email=new_user.email,
+            password=new_user.password,
+            role_id=new_user.role_id,
         )
 
-        self.db.add(new_user)
+        self.db.add(user)
         await self.db.commit()
-        await self.db.refresh(new_user)
+        await self.db.refresh(user)
 
-        return new_user
+        return user
     
 
     async def update_user(
