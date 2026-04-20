@@ -10,7 +10,10 @@ DB_TIMEOUT = 5.0
 SERVICE_TIMEOUT = 3.0
 
 class HealthService:
-    def __init__(self, repo: HealthRepository):
+    def __init__(
+        self, 
+        repo: HealthRepository
+    ):
         self.repo = repo
 
     async def check_database(self) -> str:
