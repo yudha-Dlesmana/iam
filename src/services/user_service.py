@@ -17,8 +17,10 @@ class UserService:
     ) -> BaseResponse[list[UserResponse]]:
         users = await self.repo.get_all_users()
         
-        data = [UserResponse.model_validate(user) for user in users]
-        return BaseResponse(message="User fetched", data=data)
+        return BaseResponse(
+            message="User fetched", 
+            data=[UserResponse.model_validate(user) for user in users]
+        )
 
     async def get_user_by_id(
         self, 
@@ -27,10 +29,15 @@ class UserService:
         user = await self.repo.get_user_by_id(user_id)
         
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(
+                status_code=404, 
+                detail="User not found"
+            )
         
-        data = UserResponse.model_validate(user)
-        return BaseResponse(message="User fetched", data=data)
+        return BaseResponse(
+            message="User fetched", 
+            data=UserResponse.model_validate(user)
+        )
 
     async def get_user_by_email(
         self, 
@@ -39,10 +46,15 @@ class UserService:
         user = await self.repo.get_user_by_email(user_email)
         
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        data = UserResponse.model_validate(user)
-        return BaseResponse(message="User fetched", data=data)
+            raise HTTPException(
+                status_code=404, 
+                detail="User not found"
+            )
+         
+        return BaseResponse(
+            message="User fetched", 
+            data=UserResponse.model_validate(user)
+        )
 
     async def create_user(
         self, 
@@ -50,8 +62,10 @@ class UserService:
     ) -> BaseResponse[UserResponse]:
         user = await self.repo.create_user(request)
 
-        data=UserResponse.model_validate(user)
-        return BaseResponse(message="User created", data=data)
+        return BaseResponse(
+            message="User created", 
+            data=UserResponse.model_validate(user)
+        )
 
     async def update_user(
         self, 
@@ -61,10 +75,15 @@ class UserService:
         user = await self.repo.update_user(user_id, request)
 
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(
+                status_code=404, 
+                detail="User not found"
+            )
 
-        data=UserResponse.model_validate(user)
-        return BaseResponse(message="User updated", data=data)
+        return BaseResponse(
+            message="User updated", 
+            data=UserResponse.model_validate(user)
+        )
 
     async def delete_user(
         self, 
@@ -73,6 +92,11 @@ class UserService:
         deleted = await self.repo.delete_user(user_id)
 
         if not deleted:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(
+                status_code=404, 
+                detail="User not found"
+            )
 
-        return BaseResponse(message="User deleted")
+        return BaseResponse(
+            message="User deleted"
+        )
