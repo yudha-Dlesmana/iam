@@ -41,12 +41,12 @@ class UserRepository:
 
     async def create_user( 
         self, 
-        new_user: UserCreateRequest 
+        request: UserCreateRequest 
     ) -> User:
         user = User(
-            email=new_user.email,
-            password=new_user.password,
-            role_id=new_user.role_id,
+            email=request.email,
+            password=request.password,
+            role_id=request.role_id,
         )
 
         self.db.add(user)

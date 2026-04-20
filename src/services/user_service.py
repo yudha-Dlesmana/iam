@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 
+from src.core.security import hash_password
 from src.schemas.base_schema import BaseResponse
 from src.schemas.user_schema import UserResponse, UserCreateRequest, UserUpdateRequest
 from src.repositories.user_repository import UserRepository
@@ -64,13 +65,8 @@ class UserService:
         self, 
         request: UserCreateRequest
     ) -> BaseResponse[UserResponse]:
-        hashed_password = request.password
-        new_user = UserCreateRequest(
-            email=request.email,
-            password=hashed_password,
-            role_id=request.role_id
-        )
-        user = await self.repo.create_user(new_user)
+        request.password = hash_password(request.password)
+        user = await self.repo.create_user(request)
 
         return BaseResponse(
             message="User created", 
@@ -83,6 +79,8 @@ class UserService:
         user_id: str, 
         request: UserUpdateRequest
     ) -> BaseResponse[UserResponse]:
+        if request.password:
+            request.password = hash_password(request.password)
         user = await self.repo.update_user(user_id, request)
 
         if not user:
