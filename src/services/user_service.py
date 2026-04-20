@@ -12,6 +12,7 @@ class UserService:
     ):
         self.repo = repo
 
+
     async def get_all_users(
         self
     ) -> BaseResponse[list[UserResponse]]:
@@ -21,6 +22,7 @@ class UserService:
             message="User fetched", 
             data=[UserResponse.model_validate(user) for user in users]
         )
+
 
     async def get_user_by_id(
         self, 
@@ -39,6 +41,7 @@ class UserService:
             data=UserResponse.model_validate(user)
         )
 
+
     async def get_user_by_email(
         self, 
         user_email: str
@@ -56,6 +59,7 @@ class UserService:
             data=UserResponse.model_validate(user)
         )
 
+
     async def create_user(
         self, 
         request: UserCreateRequest
@@ -66,6 +70,7 @@ class UserService:
             message="User created", 
             data=UserResponse.model_validate(user)
         )
+
 
     async def update_user(
         self, 
@@ -84,6 +89,7 @@ class UserService:
             message="User updated", 
             data=UserResponse.model_validate(user)
         )
+
 
     async def delete_user(
         self, 

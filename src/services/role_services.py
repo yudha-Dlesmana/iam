@@ -12,6 +12,7 @@ class RoleService:
     ):
         self.repo = repo
     
+
     async def get_all_roles(
         self
     ) -> BaseResponse[list[RoleResponse]]:
@@ -21,6 +22,7 @@ class RoleService:
             message="Role fetched",
             data=[RoleResponse.model_validate(role) for role in roles]
         )
+
 
     async def get_role_by_id(
         self, 
@@ -39,6 +41,7 @@ class RoleService:
             data=RoleResponse.model_validate(role)
         ) 
 
+
     async def get_role_by_name(
         self,
         role_name: str
@@ -56,6 +59,7 @@ class RoleService:
             data=RoleResponse.model_validate(role)
         )
     
+
     async def create_role (
         self, 
         request: RoleRequest
@@ -66,6 +70,7 @@ class RoleService:
             message="Role created",
             data=RoleResponse.model_validate(role)
         )
+
 
     async def update_role(
         self, 
@@ -84,6 +89,7 @@ class RoleService:
             message="Role updated",
             data=RoleResponse.model_validate(role)
         )
+
 
     async def delete_role(
         self, 
