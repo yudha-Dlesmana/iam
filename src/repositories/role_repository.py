@@ -66,6 +66,7 @@ class RoleRepository:
 
         return await self.db.get(Role, role_id)
 
+
     async def delete_role(
         self, 
         role_id: int
