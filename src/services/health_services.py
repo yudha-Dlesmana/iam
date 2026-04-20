@@ -36,7 +36,7 @@ class HealthService:
     async def get_health(
         self
     ) -> BaseResponse[HealthResponse]:
-        db_status, other_status = await asyncio.gether(
+        db_status, other_status = await asyncio.gather(
             self.check_database(),
             self.check_other_service(),
         )

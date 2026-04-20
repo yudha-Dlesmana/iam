@@ -9,7 +9,7 @@ from src.services.health_services import HealthService
 router = APIRouter(prefix="/health", tags=["Health"])
 
 @router.get(
-    "/health", 
+    "", 
     status_code=200,
     response_model=BaseResponse[HealthResponse]
 )
