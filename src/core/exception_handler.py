@@ -2,7 +2,7 @@ import re
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import IntegrityError, OperationalError, DatabaseError
 
 from src.schemas.base_schema import BaseResponse
 
@@ -62,6 +62,12 @@ async def operational_error_handler(_request: Request, _exc: OperationalError):
         content=BaseResponse(success=False, message="Database unavailable", data=None).model_dump()
     )
 
+async def database_error_handler(_request: Request, _exc: DatabaseError):
+    return JSONResponse(
+        status_code=503,
+        content=BaseResponse(success=False, message="Database error", data=None).model_dump()
+    )
+
 # -- Handler Registration --
 
 from fastapi import FastAPI
@@ -72,6 +78,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         (RequestValidationError, validation_error_handler),
         (IntegrityError, integrity_error_handler),
         (OperationalError, operational_error_handler),
+        (DatabaseError, database_error_handler),
     ]
 
     for exc_class, handler in handlers:
