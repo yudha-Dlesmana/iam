@@ -5,6 +5,7 @@ from src.schemas.base_schema import BaseResponse
 from src.schemas.user_schema import UserResponse, UserCreateRequest, UserUpdateRequest
 from src.services.user_service import UserService
 
+
 router = APIRouter(prefix="/user", tags=["Users"])
 
 @router.get(
@@ -17,6 +18,7 @@ async def get_all_users(
 ):
     return await service.get_all_users()
 
+
 @router.get(
     "/{user_id}", 
     status_code=200,
@@ -27,6 +29,7 @@ async def get_user_by_user_id(
     service: UserService = Depends(get_user_service)
 ):
     return await service.get_user_by_id(user_id)
+
 
 @router.get(
     "/email/search",
@@ -39,6 +42,7 @@ async def get_user_by_email(
 ):
     return await service.get_user_by_email(user_email)
 
+
 @router.post(
     "",
     status_code=201,
@@ -49,6 +53,7 @@ async def create_user(
     service: UserService = Depends(get_user_service)
 ):
     return await service.create_user(request)
+
 
 @router.put(
     "/{user_id}",
@@ -61,6 +66,7 @@ async def update_user(
     service: UserService = Depends(get_user_service)
 ):
     return await service.update_user(user_id, request)
+
 
 @router.delete(
     "/{user_id}",
