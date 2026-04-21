@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    ENV: str = "development"
+    ENV: str = "development" # "production" in prod
 
     PORT: int = 8000
     HOST: str = "0.0.0.0"
