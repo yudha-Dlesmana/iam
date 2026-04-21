@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from datetime import datetime
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+
+from src.schemas.validators import password_validator
 
 class UserCreateRequest(BaseModel):
     email: EmailStr
@@ -9,12 +11,8 @@ class UserCreateRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        has_letter = any(c.isalpha() for c in v)
-        has_digit = any(c.isdigit() for c in v)
-        has_symbol = any(c in "!@#$%^&*()_+-=[]{}|;':\",./<>?" for c in v)
-        if not (has_letter and has_digit and has_symbol):
-            raise ValueError("Password must contain letter, number and symbol")
-        return v
+        return password_validator(v)
+        
 
 class UserUpdateRequest(BaseModel):
     password: str | None = Field(default=None, min_length=8, examples=["MyP@ss123"])
@@ -23,20 +21,14 @@ class UserUpdateRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        has_letter = any(c.isalpha() for c in v)
-        has_digit = any(c.isdigit() for c in v)
-        has_symbol = any(c in "!@#$%^&*()_+-=[]{}|;':\",./<>?" for c in v)
-        if not(has_letter and has_digit and has_symbol):
-            raise ValueError("password must contain symbol")
-        return v
+        return password_validator(v, optional=True)
 
     @model_validator(mode="after")
     def at_least_one_field(self) -> "UserUpdateRequest":
         if self.password is None and self.role_id is None:
             raise ValueError("At least one field (password or role_id) must be provided")
         return self
+
 
 class UserResponse(BaseModel):
     id: str

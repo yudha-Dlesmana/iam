@@ -1,13 +1,15 @@
-from botocore import config
-from fastapi.openapi.models import Example
-from fastapi import Form, HTTPException
 from typing import Annotated, Literal
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from src.schemas.validators import password_validator
 
 class LoginRequest(BaseModel):
     email: EmailStr = Field(..., examples=["user0@example.com"])
     password: str = Field(..., min_length=8, examples=["MyP@ass123"])
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return password_validator(v)
 
 class AccessTokenData(BaseModel):
     type: Literal["access"] = "access"
