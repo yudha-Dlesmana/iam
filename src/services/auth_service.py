@@ -16,7 +16,7 @@ class AuthService:
 
     async def login(
         self,
-        request = LoginRequest
+        request: LoginRequest
     ) -> TokenPair:
         user = await self.repo.get_user_by_email(request.email)
 
