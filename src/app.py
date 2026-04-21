@@ -10,6 +10,7 @@ app = FastAPI(
     title="FastAPI MySQL Starter",
     description="",
     version="1.0.0",
+    swagger_ui_parameters={"withCredentials": True}
 )
 
 register_exception_handlers(app)

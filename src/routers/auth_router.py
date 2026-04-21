@@ -1,5 +1,6 @@
-from src.core.config import settings
 from fastapi import APIRouter, Depends, Response, Cookie
+
+from src.core.config import settings
 from src.core.dependency import get_auth_service, get_current_user
 from src.services.auth_service import AuthService
 from src.models import User
