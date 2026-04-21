@@ -6,7 +6,11 @@ from src.core.exception_handler import register_exception_handlers
 from src.routers.api_router import api_router
 
 
-app = FastAPI()
+app = FastAPI(
+    title="FastAPI MySQL Starter",
+    description="",
+    version="1.0.0",
+)
 
 register_exception_handlers(app)
 
