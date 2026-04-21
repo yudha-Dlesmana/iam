@@ -2,7 +2,7 @@ def password_validator(v: str | None, *, optional: bool = False) -> str | None:
     if v is None:
         if optional:
             return v 
-        raise ValueError("where the password")
+        raise ValueError("Password is required")
     has_letter = any(c.isalpha() for c in v)
     has_digit = any(c.isdigit() for c in v)
     has_symbol = any(c in "!@#$%^&*()_+-=[]{}|;':\",./<>?" for c in v)
