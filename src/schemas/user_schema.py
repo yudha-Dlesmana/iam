@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
-from src.schemas.validators import password_validator
+from src.schemas.validators import Validators
 
 class UserCreateRequest(BaseModel):
     email: EmailStr
@@ -11,7 +11,7 @@ class UserCreateRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        return password_validator(v)
+        return Validators.password(v)
         
 
 class UserUpdateRequest(BaseModel):
@@ -21,7 +21,7 @@ class UserUpdateRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str | None) -> str | None:
-        return password_validator(v, optional=True)
+        return Validators.password(v, optional=True)
 
     @model_validator(mode="after")
     def at_least_one_field(self) -> "UserUpdateRequest":

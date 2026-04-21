@@ -1,7 +1,7 @@
 from typing import Annotated, Literal
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from src.schemas.validators import password_validator
+from src.schemas.validators import Validators
 
 class LoginRequest(BaseModel):
     email: EmailStr = Field(..., examples=["user0@example.com"])
@@ -9,7 +9,7 @@ class LoginRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        return password_validator(v)
+        return Validators.password(v)
 
 class AccessTokenData(BaseModel):
     type: Literal["access"] = "access"
