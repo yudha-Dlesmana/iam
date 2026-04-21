@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
+    ENV: str = "development"
+
     PORT: int = 8000
     HOST: str = "0.0.0.0"
 
@@ -16,5 +18,8 @@ class Settings(BaseSettings):
         env_file = ".env"
         extra = "ignore"
 
+    @property
+    def is_production(self) -> bool:
+        return self.ENV == "production"
 
 settings = Settings()
