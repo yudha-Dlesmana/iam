@@ -41,7 +41,6 @@ class UserUpdateRequest(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: EmailStr
-    password: str               # temp
     role_id: int | None = None
     created_at: datetime
 
