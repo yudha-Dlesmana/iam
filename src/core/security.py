@@ -1,12 +1,16 @@
+from fastapi import HTTPException
+from pydantic import TypeAdapter, ValidationError
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from datetime import datetime, timedelta, timezone
 from jose import jwt
+from jose.exceptions import JWTError
 
 from src.core.config import settings
+from src.schemas.auth_schema import TokenData
 
 
 _ph = PasswordHasher()
+_token_adapter = TypeAdapter(TokenData)
 
 def hash_password(plain: str) -> str:
     return _ph.hash(plain)
@@ -19,31 +23,32 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token (subject: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {
-        "sub": subject, 
-        "exp": expire, 
-        "type": "access"
-    }
+def create_token(data: TokenData) -> str:
+    payload = data.model_dump(mode="json")
+    payload["exp"] = int(data.exp.timestamp())
 
     return jwt.encode(
-        payload, 
+        payload,
         settings.JWT_SECRET_KEY, 
         algorithm=settings.JWT_ALGORITHM
     )
 
-
-def create_refresh_token(subject: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRES_DAYS)
-    payload = {
-        "sub": subject,
-        "exp": expire,
-        "type": "refresh"
-    }
-
-    return jwt.encode(
-        payload,
-        settings.JWT_SECRET_KEY,
-        algorithm=settings.JWT_ALGORITHM
-    )
+def decode_token(token: str) -> TokenData:
+    try:
+        payload = jwt.decode(
+            token,
+            key=settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM]
+        )
+        return _token_adapter.validate_python(payload)
+        
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+    except ValidationError:
+        raise HTTPException(
+            status_code=422,
+            detail="Token payload malformed"
+        )
