@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
 
     DB_URL: str
+    REDIS_URL: str
 
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str

@@ -14,7 +14,10 @@ alembic>=1.13.0                     # DB migrations
 aiomysql>=0.2.0                     # Async MySQL driver
 PyMySQL>=1.1.0                      # Sync MySQL driver (used by Alembic)
 
-# Auth
+# Redis
+redis[hiredis]>=5.0.0               # redis client + C parser
+
+# Security
 python-jose[cryptography]>=3.3.0    # JWT tokens
 argon2-cffi>=23.1.0                 # Password hashing
 

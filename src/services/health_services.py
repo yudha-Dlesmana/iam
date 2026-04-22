@@ -1,3 +1,4 @@
+from redis import asyncio
 import asyncio
 from sqlalchemy.exc import OperationalError, DatabaseError
 
@@ -16,7 +17,9 @@ class HealthService:
     ):
         self.repo = repo
 
-    async def check_database(self) -> str:
+    async def check_database(
+        self
+    ) -> str:
         try:
             await asyncio.wait_for(self.repo.check_db(), timeout=DB_TIMEOUT)
             return "connected"
@@ -27,7 +30,22 @@ class HealthService:
         except DatabaseError as e:
             return f"unavailable: database error: {str(e.orig)}"
 
-    async def check_other_service(self) -> str:
+
+    async def check_redis(
+        self
+    ) -> str:
+        try:
+            await asyncio.wait_for(self.repo.check_redis(), timeout=DB_TIMEOUT)
+            return "connected"
+        except asyncio.TimeoutError:
+            return f"unavailable: timed out after {DB_TIMEOUT}s"
+        except Exception as e:
+            return f"unavailale:{str(e)}"
+
+
+    async def check_other_service(
+        self
+    ) -> str:
         try:
             await asyncio.wait_for(asyncio.sleep(0.1), timeout=SERVICE_TIMEOUT)
             return "ok"
@@ -39,8 +57,9 @@ class HealthService:
     async def get_health(
         self
     ) -> BaseResponse[HealthResponse]:
-        db_status, other_status = await asyncio.gather(
+        db_status, redis_status,other_status = await asyncio.gather(
             self.check_database(),
+            self.check_redis(),
             self.check_other_service(),
         )
         return BaseResponse(
@@ -48,8 +67,8 @@ class HealthService:
             data=HealthResponse(
                 status="running",
                 database=db_status,
+                redis=redis_status,
                 other_service=other_status
-
             )
         )
     

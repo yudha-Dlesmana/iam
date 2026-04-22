@@ -1,3 +1,5 @@
+from src.core.redis_client import get_redis
+from redis.asyncio import Redis
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -16,9 +18,11 @@ from src.repositories.user_repository import UserRepository
 bearer_scheme= HTTPBearer()
 
 def get_health_service(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db), 
+    redis: Redis = Depends(get_redis)
 ) -> HealthService:
-    repo = HealthRepository(db)
+    repo = HealthRepository(db, redis)
+
     return HealthService(repo)
 
 def get_role_service(
