@@ -20,8 +20,8 @@ down_revision: Union[str, None] = '80b2e2faedd7'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-EMAIL = "admin@mail.com"
-PASSWORD = "qwe123"
+EMAIL = "user0@example.com"
+PASSWORD = "MyP@ass123"
 
 def upgrade() -> None:
     users_table = sa.table(
