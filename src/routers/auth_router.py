@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import APIRouter, Depends, Response, Cookie
 
@@ -40,7 +42,7 @@ async def login(
 )
 async def refresh(
     response: Response,
-    refresh_token: str = Cookie(...),
+    refresh_token: str = Cookie(..., include_in_schema=False),
     service: AuthService = Depends(get_auth_service)
 ):
     pair = await service.refresh(refresh_token)
@@ -67,7 +69,7 @@ async def logout(
     service: AuthService = Depends(get_auth_service),
     current_user: User = Depends(get_current_user),
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    refresh_token: str = Cookie(...)
+    refresh_token: str = Cookie(..., include_in_schema=False)
 ):
     await service.logout(
         access_token=credentials.credentials,
