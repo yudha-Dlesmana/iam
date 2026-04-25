@@ -38,15 +38,24 @@ def get_user_service(
     return UserService(repo)
 
 def get_auth_service(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis)
 ) -> AuthService:
     repo = UserRepository(db)
-    return AuthService(repo)
+    return AuthService(repo, redis)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis)
 ) -> User:
+    access_token: str = credentials.credentials
+
+    if await redis.exists(f"blacklist:{access_token}"):
+        raise HTTPException(
+                status_code=401, 
+                detail="Token revoked"
+            )
     payload = decode_token(credentials.credentials)
     if payload.type != "access":
         raise HTTPException(

@@ -1,7 +1,8 @@
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import APIRouter, Depends, Response, Cookie
 
 from src.core.config import settings
-from src.core.dependency import get_auth_service, get_current_user
+from src.core.dependency import get_auth_service, get_current_user, bearer_scheme
 from src.services.auth_service import AuthService
 from src.models import User
 from src.schemas.user_schema import UserResponse
@@ -62,8 +63,17 @@ async def refresh(
     response_model=BaseResponse[None]
 )
 async def logout(
-    response: Response
+    response: Response,
+    service: AuthService = Depends(get_auth_service),
+    current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    refresh_token: str = Cookie(...)
 ):
+    await service.logout(
+        access_token=credentials.credentials,
+        refresh_token=refresh_token,
+        current_user_id=current_user.id
+    )
     response.delete_cookie("refresh_token")
     return BaseResponse(
         message="Logged out"
