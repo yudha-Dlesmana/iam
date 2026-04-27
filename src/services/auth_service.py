@@ -23,7 +23,7 @@ class AuthService:
     ) -> TokenPair:
         user = await self.repo.get_user_by_email(request.email)
 
-        if not user or not verify_password(request.password, user.password):
+        if not user or not user.password or not verify_password(request.password, user.password):
             raise HTTPException(
                 status_code=401, 
                 detail="invalid email or password"
