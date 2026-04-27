@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     ENV: str = "development" # "production" in prod
+    FRONTEND_URL: str
 
     PORT: int = 8000
     HOST: str = "0.0.0.0"
@@ -13,6 +14,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES:int = 30
     REFRESH_TOKEN_EXPIRES_DAYS:int = 7
+
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
     
 
     class Config:
