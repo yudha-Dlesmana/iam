@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING
 import uuid
 from datetime import datetime
@@ -21,4 +22,4 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     role: Mapped[Role | None] = relationship("Role", back_populates="users")
-    oauth_account: Mapped[list[OAuthAccount]] = relationship("OAuthAccount", back_populates="users")
+    oauth_accounts: Mapped[list[OAuthAccount]] = relationship("OAuthAccount", back_populates="user")
