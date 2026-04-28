@@ -1,3 +1,4 @@
+from src.services.oauth_service import OAuthService
 from src.core.redis_client import get_redis
 from redis.asyncio import Redis
 from fastapi import Depends, HTTPException
@@ -14,6 +15,7 @@ from src.services.auth_service import AuthService
 from src.repositories.health_repository import HealthRepository
 from src.repositories.role_repository import RoleRepository
 from src.repositories.user_repository import UserRepository
+from src.repositories.oauth_repository import OAuthRepository
 
 bearer_scheme= HTTPBearer()
 
@@ -43,6 +45,13 @@ def get_auth_service(
 ) -> AuthService:
     repo = UserRepository(db)
     return AuthService(repo, redis)
+
+def get_oauth_service(
+    db: AsyncSession = Depends(get_db)
+) -> OAuthService:
+    oauth_repo = OAuthRepository(db)
+    user_repo = UserRepository(db)
+    return OAuthService(oauth_repo, user_repo)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
