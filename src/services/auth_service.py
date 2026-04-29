@@ -59,7 +59,7 @@ class AuthService:
         if payload.type != "refresh":
             raise HTTPException(
                 status_code=401,
-                detail="Invalid token"
+                detail="Invalid token type"
             )
         user = await self.repo.get_user_by_id(payload.sub)
         if not user:

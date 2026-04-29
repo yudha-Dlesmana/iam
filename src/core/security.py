@@ -3,7 +3,7 @@ from pydantic import TypeAdapter, ValidationError
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from jose import jwt
-from jose.exceptions import JWTError
+from jose.exceptions import JWTError, ExpiredSignatureError
 
 from src.core.config import settings
 from src.schemas.auth_schema import TokenData
@@ -42,10 +42,16 @@ def decode_token(token: str) -> TokenData:
         )
         return _token_adapter.validate_python(payload)
         
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail="Token has expired"
+        )
+
     except JWTError:
         raise HTTPException(
             status_code=401,
-            detail="Invalid or expired token"
+            detail="Invalid token"
         )
     except ValidationError:
         raise HTTPException(
