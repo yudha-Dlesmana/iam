@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 import src.models
+from src.core.logger import setup_logging
 from src.core.exception_handler import register_exception_handlers
 from src.routers.api_router import api_router
 
@@ -12,6 +13,8 @@ app = FastAPI(
     version="1.0.0",
     swagger_ui_parameters={"withCredentials": True}
 )
+
+setup_logging()
 
 register_exception_handlers(app)
 

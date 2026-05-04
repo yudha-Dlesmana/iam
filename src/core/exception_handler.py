@@ -5,6 +5,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, OperationalError, DatabaseError
 
 from src.schemas.base_schema import BaseResponse
+from src.core.logger import get_logger
+from src.core.config import settings
+
+logger = get_logger(__name__)
 
 async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
@@ -68,8 +72,15 @@ async def database_error_handler(_request: Request, _exc: DatabaseError):
         content=BaseResponse(success=False, message="Database error", data=None).model_dump()
     )
 
-# -- Handler Registration --
+async def internal_error_handler(request: Request, exc: Exception):
+    logger.exception("unhandled error on %s %s", request.method, request.url.path)
+    detail = str(exc) if settings.ENV == "development" else None
+    return JSONResponse(
+        status_code=500,
+        content=BaseResponse(success=False, message="Internal server error", data=detail).model_dump()
+    )
 
+# -- Handler Registration --
 from fastapi import FastAPI
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -79,6 +90,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         (IntegrityError, integrity_error_handler),
         (OperationalError, operational_error_handler),
         (DatabaseError, database_error_handler),
+        (Exception, internal_error_handler),
     ]
 
     for exc_class, handler in handlers:
