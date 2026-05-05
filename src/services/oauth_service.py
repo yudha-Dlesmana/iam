@@ -62,7 +62,7 @@ class OAuthService:
         )
         refresh_token_payload = RefreshTokenData(
             sub=user.id,
-            exp=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRES_DAYS)
+            exp=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         )
 
         return TokenPair(
