@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 
 import src.models
 from src.core.logger import setup_logging
+from src.core.cors import setup_cors
 from src.core.exception_handler import register_exception_handlers
 from src.routers.api_router import api_router
 
@@ -15,6 +16,7 @@ app = FastAPI(
 )
 
 setup_logging()
+setup_cors(app)
 
 register_exception_handlers(app)
 
