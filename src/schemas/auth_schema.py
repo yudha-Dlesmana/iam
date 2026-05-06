@@ -4,8 +4,8 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from src.schemas.validators import Validators
 
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(..., examples=["user0@example.com"])
-    password: str = Field(..., min_length=8, examples=["MyP@ass123"])
+    email: EmailStr = Field(..., examples=["admin@starter.com"])
+    password: str = Field(..., min_length=8, examples=["!Qwer123"])
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
