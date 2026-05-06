@@ -1,6 +1,11 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        extra="ignore"
+    )
+
     ENV: str = "development" # "production" in prod
     FRONTEND_URL: str
 
@@ -18,11 +23,6 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str
-    
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
     @property
     def is_production(self) -> bool:
