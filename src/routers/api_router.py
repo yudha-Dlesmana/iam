@@ -9,7 +9,7 @@ from src.routers.oauth_router import router as oauth_router
 api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(health_router)
+api_router.include_router(oauth_router)
+api_router.include_router(auth_router)
 api_router.include_router(role_router)
 api_router.include_router(user_router)
-api_router.include_router(auth_router)
-api_router.include_router(oauth_router)

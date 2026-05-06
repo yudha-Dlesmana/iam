@@ -9,9 +9,9 @@ from src.routers.api_router import api_router
 
 
 app = FastAPI(
-    title="FastAPI MySQL Starter",
+    title="FastAPI Starter",
     description="",
-    version="1.0.0",
+    version="0.0.1",
     swagger_ui_parameters={"withCredentials": True}
 )
 
