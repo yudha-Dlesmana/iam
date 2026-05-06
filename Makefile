@@ -12,7 +12,7 @@ test:
 	@.venv/bin/pytest
 
 test-cov:
-	@.venv/bin/pytest --cov=src --cov-report=term-missing
+	@.venv/bin/pytest --cov=src --cov-report=term-missing --cov-report=html
 
 stop:
 	docker compose stop
