@@ -10,6 +10,8 @@ from src.models import Role, User
 ROLES = ["super admin", "user"]
 ADMIN_EMAIL = "super_admin@starter.com"
 ADMIN_PASSWORD = "!Qwer123"
+USER_EMAIL= "user@starter.com"
+USER_PASSWORD = "!QWe123"
 
 # ---- fungsi seed ----
 async def seed_roles(db: AsyncSession) -> None:
@@ -43,11 +45,30 @@ async def seed_admin(db: AsyncSession) -> None:
     ))
     print(f"admin created: {ADMIN_EMAIL}")
 
+
+async def seed_user(db: AsyncSession) -> None:
+    existing = await db.scalar(select(User).where(User.email == USER_EMAIL))
+    if existing:
+        print(f"user already exists: {USER_EMAIL}")
+        return
+
+    user_role = await db.scalar(select(Role).where(Role.name == 'user'))
+    if not user_role:
+        raise RuntimeError("user role missing - run seed_roles first")
+
+    db.add(User(
+        email=USER_EMAIL,
+        password=hash_password(USER_PASSWORD),
+        role_id=user_role.id
+    ))
+    print(f"user created: {USER_EMAIL}")
+
 # ---- entrypoint ----
 async def main():
     async with SessionLocal() as db:
         await seed_roles(db)
         await seed_admin(db)
+        await seed_user(db)
         await db.commit()
     await engine.dispose()
     print("seed done")
