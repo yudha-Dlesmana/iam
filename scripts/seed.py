@@ -7,8 +7,8 @@ from src.core.security import hash_password
 from src.models import Role, User
 
 # ---- constant seed ----
-ROLES = ["admin", "user"]
-ADMIN_EMAIL = "admin@starter.com"
+ROLES = ["super admin", "user"]
+ADMIN_EMAIL = "super_admin@starter.com"
 ADMIN_PASSWORD = "!Qwer123"
 
 # ---- fungsi seed ----
@@ -32,7 +32,7 @@ async def seed_admin(db: AsyncSession) -> None:
         print(f"admin already exists: {ADMIN_EMAIL}")
         return
     
-    admin_role = await db.scalar(select(Role).where(Role.name == 'admin'))
+    admin_role = await db.scalar(select(Role).where(Role.name == 'super admin'))
     if not admin_role:
         raise RuntimeError("admin role missing - run seed_roles first")
 
