@@ -54,6 +54,8 @@ echo "redis is alive"
 # 5. apply migration
 alembic upgrade head
 
+ALEMBIC_DB_URL="$TEST_DB_URL" alembic upgrade head
+
 # 6. seeding
 python3 -m scripts.seed
 

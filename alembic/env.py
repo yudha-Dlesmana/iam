@@ -1,3 +1,4 @@
+import os
 import asyncio
 from logging.config import fileConfig
 from alembic import context
@@ -27,6 +28,8 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+url = os.environ.get("ALEMBIC_DB_URL", settings.DB_URL)
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -39,7 +42,6 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = settings.DB_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -64,7 +66,7 @@ async def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    engine = create_async_engine(settings.DB_URL)
+    engine = create_async_engine(url)
     async with engine.connect() as connection:
         await connection.run_sync(apply_migrations)
     await engine.dispose()
