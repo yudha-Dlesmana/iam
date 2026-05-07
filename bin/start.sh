@@ -29,7 +29,21 @@ until docker compose exec -T \
 done
 echo "mysql is alive"
 
-# 3. waiting Redis ready 
+# 3. ensure databases + user
+echo "ensuring database ..."
+docker compose exec -T \
+    -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" \
+    mysql mysql -uroot <<SQL
+CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
+CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;
+CREATE DATABASE IF NOT EXISTS \`${DB_NAME}_test\`;
+GRANT ALL ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
+GRANT ALL ON \`${DB_NAME}_test\`.* TO '${DB_USER}'@'%';
+FLUSH PRIVILEGES;
+SQL
+echo "database ready"
+
+# 4. waiting Redis ready 
 echo "waiting Redis ..."
 until docker compose exec -T \
     redis redis-cli ping >/dev/null 2>&1; do
@@ -37,11 +51,11 @@ until docker compose exec -T \
 done
 echo "redis is alive"
 
-# 4. apply migration
+# 5. apply migration
 alembic upgrade head
 
-# 5. seeding
+# 6. seeding
 python3 -m scripts.seed
 
-# 6. start app
+# 7. start app
 python3 dev.py
