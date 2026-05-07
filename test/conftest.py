@@ -1,7 +1,7 @@
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
 
 from src.app import app
 from src.core.config import settings
@@ -29,5 +29,5 @@ async def db_session(db_engine: AsyncEngine):
 
 
 @pytest_asyncio.fixture(loop_scope="session")
-async def user_repo(db_session: AsyncEngine):
+async def user_repo(db_session: AsyncSession):
     return UserRepository(db_session)
