@@ -8,6 +8,7 @@ class Settings(BaseSettings):
 
     ENV: str = "development" # "production" in prod
     FRONTEND_URL: str
+    FRONTEND_URL_DEV: str
 
     PORT: int = 8000
     HOST: str = "0.0.0.0"
