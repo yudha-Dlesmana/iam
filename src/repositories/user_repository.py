@@ -20,6 +20,17 @@ class UserRepository:
 
         return list(result.scalars().all())
     
+    async def get_admin_and_demo_users(
+        self
+    ) -> list[User]:
+        result = await self.db.scalars(
+            select(User).where(
+                User.email.in_([
+                    "super_admin@starter.com",
+                    "user@starter.com"
+                ])
+            ))
+        return list(result.all())
 
     async def get_user_by_id(
         self, 
