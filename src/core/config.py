@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
 
     DB_URL: str
+    TEST_DB_URL: str | None = None
     REDIS_URL: str
 
     JWT_SECRET_KEY: str
