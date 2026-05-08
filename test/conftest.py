@@ -21,7 +21,11 @@ async def db_engine():
 async def db_session(db_engine: AsyncEngine):
     async with db_engine.connect() as conn:
         trans = await conn.begin()
-        SessionTest = async_sessionmaker(bind=conn, expire_on_commit=False)
+        SessionTest = async_sessionmaker(
+            bind=conn, 
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint"
+        )
         async with SessionTest() as session:
             yield session
 
