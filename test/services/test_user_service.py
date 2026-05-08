@@ -35,7 +35,9 @@ def user_service(mock_repo):
     return UserService(mock_repo)
 
 
-# get_all_users
+# ═══════════════════════════════════
+# GET_ALL_USERS
+# ═══════════════════════════════════
 
 async def test_get_all_users_returns_response_with_user_list(user_service, mock_repo):
     mock_repo.get_all_users.return_value = [
@@ -59,7 +61,9 @@ async def test_get_all_users_returns_empty_list_when_no_users(user_service, mock
     assert result.data == []
 
 
-# get_user_by_id
+# ═══════════════════════════════════
+# GET_USER_BY_ID
+# ═══════════════════════════════════
 
 async def test_get_user_by_id_returns_user_response(user_service, mock_repo):
     mock_repo.get_user_by_id.return_value = make_user(user_id="abc", email="found@starter.com")
@@ -82,7 +86,9 @@ async def test_get_user_by_id_raises_404_when_not_found(user_service, mock_repo)
     assert exc.value.detail == "User not found"
 
 
-# get_user_by_email
+# ═══════════════════════════════════
+# GET_USER_BY_EMAIL
+# ═══════════════════════════════════
 
 async def test_get_user_by_email_returns_user_response(user_service, mock_repo):
     mock_repo.get_user_by_email.return_value = make_user(email="search@starter.com")
@@ -102,7 +108,9 @@ async def test_get_user_by_email_raises_404_when_not_found(user_service, mock_re
     assert exc.value.status_code == 404
 
 
-# create_user
+# ═══════════════════════════════════
+# CREATE_USER
+# ═══════════════════════════════════
 
 async def test_create_user_hashes_password_and_calls_repo(user_service, mock_repo):
     created = make_user(email="new@starter.com")
@@ -124,7 +132,9 @@ async def test_create_user_hashes_password_and_calls_repo(user_service, mock_rep
     assert result.data.email == "new@starter.com"
 
 
-# update_user
+# ═══════════════════════════════════
+# UPDATE_USER
+# ═══════════════════════════════════
 
 async def test_update_user_hashes_password_when_provided(user_service, mock_repo):
     mock_repo.update_user.return_value = make_user(user_id="u1")
@@ -160,7 +170,9 @@ async def test_update_user_raises_404_when_not_found(user_service, mock_repo):
     assert exc.value.status_code == 404
 
 
-# delete_user
+# ═══════════════════════════════════
+# DELETE_USER
+# ═══════════════════════════════════
 
 async def test_delete_user_returns_response_when_deleted(user_service, mock_repo):
     mock_repo.delete_user.return_value = True

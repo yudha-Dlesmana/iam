@@ -15,7 +15,9 @@ async def user_repo(db_session: AsyncSession):
     return UserRepository(db_session)
 
 
-# get_all_users
+# ═══════════════════════════════════
+# GET_ALL_USERS
+# ═══════════════════════════════════
 
 async def test_get_all_users_returns_empty_when_no_users(db_session, user_repo):
     result = await user_repo.get_all_users()
@@ -35,7 +37,9 @@ async def test_get_all_users_returns_all_existing_users(db_session, user_repo):
     assert emails == {"a@starter.com", "b@starter.com", "c@starter.com"}
 
 
-# get_admin_and_demo_users
+# ═══════════════════════════════════
+# GET_ADMIN_AND_DEMO_USERS
+# ═══════════════════════════════════
 
 async def test_returns_admin_and_demo_when_both_exist(db_session, user_repo):
     db_session.add(User(email="user@starter.com", password="x"))
@@ -76,7 +80,9 @@ async def test_return_none_when_data_is_not_exist(db_session, user_repo):
     assert len(result) == 0
 
 
-# get_user_by_id
+# ═══════════════════════════════════
+# GET_USER_BY_ID
+# ═══════════════════════════════════
 
 async def test_get_user_by_id_returns_user_when_exists(db_session, user_repo):
     user = User(email="found@starter.com", password="x")
@@ -96,7 +102,9 @@ async def test_get_user_by_id_returns_none_when_not_exists(db_session, user_repo
     assert result is None
 
 
-# get_user_by_email
+# ═══════════════════════════════════
+# GET_USER_BY_EMAIL
+# ═══════════════════════════════════
 
 async def test_get_user_by_email_returns_user_when_exists(db_session, user_repo):
     user = User(email="search@starter.com", password="x")
@@ -115,7 +123,9 @@ async def test_get_user_by_email_returns_none_when_not_exists(db_session, user_r
     assert result is None
 
 
-# create_user
+# ═══════════════════════════════════
+# CREATE_USER
+# ═══════════════════════════════════
 
 async def test_create_user_persists_and_returns_user(db_session, user_repo):
     request = UserCreateRequest(
@@ -163,7 +173,9 @@ async def test_create_user_raises_when_email_already_exists(db_session, user_rep
         await user_repo.create_user(request)
 
 
-# update_user
+# ═══════════════════════════════════
+# UPDATE_USER
+# ═══════════════════════════════════
 
 async def test_update_user_changes_only_provided_fields(db_session, user_repo):
     user = User(email="upd@starter.com", password="oldpass", role_id=None)
@@ -198,7 +210,9 @@ async def test_update_user_returns_none_when_user_not_exists(db_session, user_re
     assert result is None
 
 
-# delete_user
+# ═══════════════════════════════════
+# DELETE_USER
+# ═══════════════════════════════════
 
 async def test_delete_user_returns_true_when_exists(db_session, user_repo):
     user = User(email="del@starter.com", password="x")
