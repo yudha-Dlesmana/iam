@@ -1,10 +1,18 @@
 import uuid
 
 import pytest
+import pytest_asyncio
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user import User
+from src.repositories.user_repository import UserRepository
 from src.schemas.user_schema import UserCreateRequest, UserUpdateRequest
+
+
+@pytest_asyncio.fixture(loop_scope="session")
+async def user_repo(db_session: AsyncSession):
+    return UserRepository(db_session)
 
 
 # get_all_users

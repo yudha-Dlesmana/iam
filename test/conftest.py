@@ -1,11 +1,10 @@
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
 
 from src.app import app
 from src.core.config import settings
-from src.repositories.user_repository import UserRepository
 
 @pytest.fixture
 def client():
@@ -22,7 +21,7 @@ async def db_session(db_engine: AsyncEngine):
     async with db_engine.connect() as conn:
         trans = await conn.begin()
         SessionTest = async_sessionmaker(
-            bind=conn, 
+            bind=conn,
             expire_on_commit=False,
             join_transaction_mode="create_savepoint"
         )
@@ -31,7 +30,3 @@ async def db_session(db_engine: AsyncEngine):
 
         await trans.rollback()
 
-
-@pytest_asyncio.fixture(loop_scope="session")
-async def user_repo(db_session: AsyncSession):
-    return UserRepository(db_session)
