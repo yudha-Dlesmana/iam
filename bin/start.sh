@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
+#
+if ! docker info > /dev/null 2>&1; then
+    echo "starting Docker ..."
+    open -a Docker --background
+    until docker info > /dev/null 2>&1; do sleep 1; done
+    echo "docker ready"
+fi
+
 # cd to project root
 cd "$(dirname "$0")/.."
 
