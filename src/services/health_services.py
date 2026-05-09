@@ -38,6 +38,8 @@ class HealthService:
             return f"{label} unavailable: connection error: {str(e.orig)}"
         except DatabaseError as e:
             return f"{label} unavailable: database error: {str(e.orig)}"
+        except Exception as e:
+            return f"{label} unavailable: {str(e)}"
 
 
     async def check_redis(
@@ -49,7 +51,7 @@ class HealthService:
         except asyncio.TimeoutError:
             return f"unavailable: timed out after {DB_TIMEOUT}s"
         except Exception as e:
-            return f"unavailale:{str(e)}"
+            return f"unavailable:{str(e)}"
 
 
     async def check_other_service(
