@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-#
+# run docker for mac os
 if ! docker info > /dev/null 2>&1; then
     echo "starting Docker ..."
     open -a Docker --background
