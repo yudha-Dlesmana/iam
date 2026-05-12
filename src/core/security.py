@@ -1,3 +1,5 @@
+from pydantic.config import ExtraValues
+from h11._abnf import status_code
 from fastapi import HTTPException
 from pydantic import TypeAdapter, ValidationError
 from argon2 import PasswordHasher
@@ -6,11 +8,9 @@ import jwt
 from jwt.exceptions import PyJWTError, ExpiredSignatureError
 
 from src.core.config import settings
-from src.schemas.auth_schema import TokenData
-
+from src.schemas.auth_schema import AccessTokenData, RefreshTokenData
 
 _ph = PasswordHasher()
-_token_adapter = TypeAdapter(TokenData)
 
 def hash_password(plain: str) -> str:
     return _ph.hash(plain)
@@ -22,39 +22,70 @@ def verify_password(plain: str, hashed: str) -> bool:
     except VerifyMismatchError:
         return False
 
-
-def create_token(data: TokenData) -> str:
-    payload = data.model_dump(mode="json")
-    payload["exp"] = int(data.exp.timestamp())
-
+#internal helpers
+def _encode(payload: dict, secret: str) -> str:
     return jwt.encode(
         payload,
-        settings.JWT_SECRET_KEY, 
+        secret, 
         algorithm=settings.JWT_ALGORITHM
     )
 
-def decode_token(token: str) -> TokenData:
+def _decode(token: str, secret: str) -> dict:
     try:
-        payload = jwt.decode(
+        return jwt.decode(
             token,
-            key=settings.JWT_SECRET_KEY,
+            key=secret,
             algorithms=[settings.JWT_ALGORITHM]
         )
-        return _token_adapter.validate_python(payload)
-        
     except ExpiredSignatureError:
         raise HTTPException(
             status_code=401,
             detail="Token has expired"
         )
-
     except PyJWTError:
         raise HTTPException(
             status_code=401,
             detail="Invalid token"
         )
+
+# public typed API
+def create_access_token(data: AccessTokenData) -> str:
+    payload = data.model_dump(mode="json")
+    payload["exp"] = int(data.exp.timestamp())
+    return _encode(payload, settings.JWT_ACCESS_SECRET)
+
+def create_refresh_token(data: RefreshTokenData) -> str:
+    payload = data.model_dump(mode="json")
+    payload["exp"] = int(data.exp.timestamp())
+    return _encode(payload, settings.JWT_REFRESH_SECRET)
+
+def decode_access_token(token: str) -> AccessTokenData:
+    payload = _decode(token, settings.JWT_ACCESS_SECRET)
+    try:
+        data = AccessTokenData.model_validate(payload)
     except ValidationError:
         raise HTTPException(
             status_code=422,
             detail="Token payload malformed"
         )
+    if data.type != "access":
+        raise HTTPException(
+            status_code=401, 
+            detail="Wrong token type")
+    return data
+
+def decode_refresh_token(token: str) -> RefreshTokenData:
+    payload = _decode(token, settings.JWT_REFRESH_SECRET)
+    try:
+        data = RefreshTokenData.model_validate(payload)
+    except ValidationError:
+        raise HTTPException (
+            status_code=422,
+            detail="Token payload malformed"
+        )
+    if data.type != "refresh":
+        raise HTTPException (
+            status_code=401,
+            detail="Wrong token type"
+        )
+    return data

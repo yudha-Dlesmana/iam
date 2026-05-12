@@ -1,4 +1,16 @@
+from typing import overload, Literal
+
 class Validators:
+
+    @overload
+    @staticmethod
+    def password(v: str | None, *, optional: Literal[True]) -> str | None: 
+        ...
+
+    @overload
+    @staticmethod
+    def password(v: str | None, *, optional: Literal[False]) -> str: 
+        ...
 
     @staticmethod
     def password(v: str | None, *, optional: bool = False) -> str | None:
