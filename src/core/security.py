@@ -2,8 +2,8 @@ from fastapi import HTTPException
 from pydantic import TypeAdapter, ValidationError
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from jose import jwt
-from jose.exceptions import JWTError, ExpiredSignatureError
+import jwt
+from jwt.exceptions import PyJWTError, ExpiredSignatureError
 
 from src.core.config import settings
 from src.schemas.auth_schema import TokenData
@@ -48,7 +48,7 @@ def decode_token(token: str) -> TokenData:
             detail="Token has expired"
         )
 
-    except JWTError:
+    except PyJWTError:
         raise HTTPException(
             status_code=401,
             detail="Invalid token"
