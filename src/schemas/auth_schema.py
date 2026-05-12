@@ -9,23 +9,19 @@ class LoginRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        return Validators.password(v)
+        return Validators.password(v, optional=False)
 
 class AccessTokenData(BaseModel):
     type: Literal["access"] = "access"
     sub: str
-    role: int | None 
+    role: str | None 
     exp: datetime
 
 class RefreshTokenData(BaseModel):
     type: Literal["refresh"] = "refresh"
     sub: str
+    jti: str
     exp: datetime
-
-TokenData = Annotated[
-    AccessTokenData | RefreshTokenData,
-    Field(discriminator="type")
-]
 
 class TokenPair(BaseModel):
     access_token: str
