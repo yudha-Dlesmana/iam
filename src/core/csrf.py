@@ -1,5 +1,9 @@
 import secrets
-from fastapi import Request, HTTPException
+from fastapi import Request, HTTPException, status
+
+
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
 
 def verify_csrf(request: Request):
     cookie_token = request.cookies.get("csrf_token")
@@ -7,11 +11,11 @@ def verify_csrf(request: Request):
 
     if not cookie_token or not header_token:
         raise HTTPException(
-            status_code = 403, 
+            status_code = status.HTTP_403_FORBIDDEN, 
             detail="CSRF token missing"
         )
     if not secrets.compare_digest(cookie_token, header_token):
         raise HTTPException(
-            status_code = 403,
+            status_code = status.HTTP_403_FORBIDDEN,
             detail="CSRF token mismatch"
         )

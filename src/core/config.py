@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -20,8 +21,8 @@ class Settings(BaseSettings):
     JWT_ACCESS_SECRET: str
     JWT_REFRESH_SECRET: str
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES:int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS:int = 7
+    ACCESS_TOKEN_EXPIRE: timedelta = timedelta(minutes=30)
+    REFRESH_TOKEN_EXPIRE: timedelta = timedelta(days=7)
 
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str

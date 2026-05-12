@@ -1,3 +1,4 @@
+from src.schemas.user_schema import UserResponse
 from typing import Annotated, Literal
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -11,10 +12,15 @@ class LoginRequest(BaseModel):
     def validate_password(cls, v: str) -> str:
         return Validators.password(v, optional=False)
 
+class LoginResponse(BaseModel):
+    user: UserResponse
+    tokens: TokenBundle
+
 class AccessTokenData(BaseModel):
     type: Literal["access"] = "access"
     sub: str
-    role: str | None 
+    role: str | None
+    jti: str
     exp: datetime
 
 class RefreshTokenData(BaseModel):
@@ -27,7 +33,3 @@ class TokenBundle(BaseModel):
     access_token: str
     refresh_token: str
     csrf_token: str
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"

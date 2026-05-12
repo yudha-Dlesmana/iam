@@ -1,6 +1,9 @@
 from fastapi import Response
 from src.core.config import settings
 
+ACCESS_MAX_AGE = settings.ACCESS_TOKEN_EXPIRE_MINUTES*60
+REFRESH_MAX_AGE = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+
 def set_auth_cookie(
     response: Response, 
     access_token: str, 
@@ -27,7 +30,7 @@ def set_auth_cookie(
     response.set_cookie(
         key="csrf_token",
         value=csrf_token,
-        httponly=True,
+        httponly=False,
         secure=settings.is_production,
         samesite="strict" if settings.is_production else "lax"
     )

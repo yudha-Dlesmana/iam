@@ -1,3 +1,6 @@
+from src.core.csrf import verify_csrf
+from src.core.dependency import get_refresh_token
+from src.core.dependency import get_access_token
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import APIRouter, Depends, Response, Cookie
 
@@ -7,7 +10,7 @@ from src.core.cookies import set_auth_cookie, clear_auth_cookie
 from src.services.auth_service import AuthService
 from src.models import User
 from src.schemas.user_schema import UserResponse
-from src.schemas.auth_schema import TokenBundle, TokenResponse, LoginRequest
+from src.schemas.auth_schema import TokenBundle, LoginRequest, LoginResponse
 from src.schemas.base_schema import BaseResponse
 
 
@@ -15,30 +18,32 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post(
     "/login",
-    response_model=BaseResponse[TokenResponse]
+    response_model=BaseResponse[UserResponse]
 )
 async def login(
     request: LoginRequest,
     response: Response,
     service: AuthService = Depends(get_auth_service)
 ):
-    bundle: TokenBundle = await service.login(request)
+    result: LoginResponse = await service.login(request)
     set_auth_cookie(
         response,
-        access_token=bundle.access_token, 
-        refresh_token=bundle.refresh_token, 
-        csrf_token=bundle.csrf_token)
+        access_token=result.tokens.access_token, 
+        refresh_token=result.tokens.refresh_token, 
+        csrf_token=result.tokens.csrf_token
+    )
     return BaseResponse(
         message="Login successful",
+        data=result.user
     )
 
 @router.post(
     "/refresh",
-    response_model=BaseResponse[TokenResponse]
+    response_model=BaseResponse[None]
 )
 async def refresh(
     response: Response,
-    refresh_token: str = Cookie(..., include_in_schema=False),
+    refresh_token: str = Depends(get_refresh_token),
     service: AuthService = Depends(get_auth_service)
 ):
     bundle = await service.refresh(refresh_token)
@@ -53,21 +58,23 @@ async def refresh(
 
 @router.post(
     "/logout", 
-    response_model=BaseResponse[None]
+    response_model=BaseResponse[None],
+    dependencies=[Depends(verify_csrf)]
 )
 async def logout(
     response: Response,
     service: AuthService = Depends(get_auth_service),
     current_user: User = Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    refresh_token: str = Cookie(..., include_in_schema=False)
+    access_token: str = Depends(get_access_token),
+    refresh_token: str = Depends(get_refresh_token)
 ):
     await service.logout(
-        access_token=credentials.credentials,
+        access_token=access_token,
         refresh_token=refresh_token,
         current_user_id=current_user.id
     )
-    response.delete_cookie("refresh_token")
+    clear_auth_cookie(
+        response)
     return BaseResponse(
         message="Logged out"
     )

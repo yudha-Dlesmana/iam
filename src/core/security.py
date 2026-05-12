@@ -1,11 +1,9 @@
-from pydantic.config import ExtraValues
-from h11._abnf import status_code
-from fastapi import HTTPException
-from pydantic import TypeAdapter, ValidationError
-from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError
 import jwt
 from jwt.exceptions import PyJWTError, ExpiredSignatureError
+from fastapi import HTTPException
+from pydantic import ValidationError
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 
 from src.core.config import settings
 from src.schemas.auth_schema import AccessTokenData, RefreshTokenData

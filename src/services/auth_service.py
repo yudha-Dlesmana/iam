@@ -1,3 +1,5 @@
+from src.schemas.user_schema import UserResponse
+from src.schemas.auth_schema import LoginResponse
 import secrets
 from uuid import uuid4
 from fastapi import HTTPException
@@ -5,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from redis.asyncio import Redis
 
 from src.core.security import verify_password, create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
+from src.core.csrf import generate_csrf_token
 from src.core.config import settings
 from src.schemas.auth_schema import LoginRequest, TokenBundle, AccessTokenData, RefreshTokenData
 from src.repositories.user_repository import UserRepository
@@ -22,7 +25,7 @@ class AuthService:
     async def login(
         self,
         request: LoginRequest
-    ) -> TokenBundle:
+    ) -> LoginResponse:
         # CHECK CREDENTIALS
         user = await self.repo.get_user_by_email(request.email)
         if not user or not user.password or not verify_password(request.password, user.password):
@@ -35,6 +38,7 @@ class AuthService:
         access_payload = AccessTokenData(
             sub=user.id,
             role=user.role.name if user.role else None,
+            jti=str(uuid4()),
             exp=datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         refresh_payload = RefreshTokenData(
@@ -51,11 +55,14 @@ class AuthService:
             f"refresh:{refresh_payload.jti}", user.id, ex=ttl
         )
         
-        return TokenBundle(
-            access_token=create_access_token(access_payload),
-            refresh_token=create_refresh_token(refresh_payload),
-            csrf_token=secrets.token_urlsafe(32)
-        )
+        return LoginResponse(
+            user=UserResponse.model_validate(user),
+            tokens=TokenBundle(
+                access_token=create_access_token(access_payload),
+                refresh_token=create_refresh_token(refresh_payload),
+                csrf_token=generate_csrf_token()
+            )
+        ) 
     
     async def refresh(
         self,
@@ -87,6 +94,7 @@ class AuthService:
         access_payload = AccessTokenData(
             sub=user.id,
             role=user.role.name if user.role else None,
+            jti=str(uuid4()),
             exp=datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         refresh_payload = RefreshTokenData(
@@ -103,7 +111,7 @@ class AuthService:
         return TokenBundle(
             access_token=create_access_token(access_payload),
             refresh_token=create_refresh_token(refresh_payload),
-            csrf_token=secrets.token_urlsafe(32)
+            csrf_token=generate_csrf_token()
         )
 
     async def logout(
@@ -112,15 +120,25 @@ class AuthService:
         refresh_token: str,
         current_user_id: str,
     ) -> None:
+        # DECODE TOKENS
         access_payload: AccessTokenData = decode_access_token(access_token)
         refresh_payload: RefreshTokenData = decode_refresh_token(refresh_token) 
 
+        # CHECK USERS TOKEN
         if not (current_user_id == access_payload.sub == refresh_payload.sub):
             raise HTTPException(
                 status_code=401,
                 detail="Invalid Credentials"
             )
 
-        ttl = int(refresh_payload.exp.timestamp() - datetime.now(timezone.utc).timestamp())
-
+        # REVOKE REFRESH (whitelist delete)
         await self.redis.delete(f"refresh:{refresh_payload.jti}")
+        
+        # REVOKE ACCESS (blacklist add)
+        access_ttl = int(access_payload.exp.timestamp() - datetime.now(timezone.utc).timestamp())
+        if access_ttl > 0:
+            await self.redis.set(
+                f"blacklist:{access_payload.jti}",
+                '1',
+                ex=access_ttl
+            )
