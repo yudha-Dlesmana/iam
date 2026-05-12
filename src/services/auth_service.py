@@ -1,3 +1,5 @@
+import secrets
+import secrets
 from uuid import uuid4
 from fastapi import HTTPException
 from datetime import datetime, timedelta, timezone
@@ -5,7 +7,7 @@ from redis.asyncio import Redis
 
 from src.core.security import verify_password, create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
 from src.core.config import settings
-from src.schemas.auth_schema import LoginRequest, TokenPair, AccessTokenData, RefreshTokenData
+from src.schemas.auth_schema import LoginRequest, TokenBundle, AccessTokenData, RefreshTokenData
 from src.repositories.user_repository import UserRepository
 
 
@@ -21,7 +23,7 @@ class AuthService:
     async def login(
         self,
         request: LoginRequest
-    ) -> TokenPair:
+    ) -> TokenBundle:
         # CHECK CREDENTIALS
         user = await self.repo.get_user_by_email(request.email)
         if not user or not user.password or not verify_password(request.password, user.password):
@@ -50,16 +52,16 @@ class AuthService:
             f"refresh:{refresh_payload.jti}", user.id, ex=ttl
         )
         
-        # RETURN ACCESS AND REFRESH TOKEN 
-        return TokenPair(
+        return TokenBundle(
             access_token=create_access_token(access_payload),
-            refresh_token=create_refresh_token(refresh_payload)
+            refresh_token=create_refresh_token(refresh_payload),
+            csrf_token=secrets.token_urlsafe(32)
         )
     
     async def refresh(
         self,
         refresh_token: str 
-    ) -> TokenPair:
+    ) -> TokenBundle:
         # DECODE REFRESH TOKEN 
         refresh_payload: RefreshTokenData = decode_refresh_token(refresh_token)
 
@@ -99,9 +101,10 @@ class AuthService:
         await self.redis.set(f"refresh:{refresh_token}", user.id, ex=ttl)
 
         # RETURN ACCESS AND REFRESH TOKEN 
-        return TokenPair(
+        return TokenBundle(
             access_token=create_access_token(access_payload),
-            refresh_token=create_refresh_token(refresh_payload)
+            refresh_token=create_refresh_token(refresh_payload),
+            csrf_token=secrets.token_urlsafe(32)
         )
 
     async def logout(

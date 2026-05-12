@@ -23,9 +23,10 @@ class RefreshTokenData(BaseModel):
     jti: str
     exp: datetime
 
-class TokenPair(BaseModel):
+class TokenBundle(BaseModel):
     access_token: str
     refresh_token: str
+    csrf_token: str
 
 class TokenResponse(BaseModel):
     access_token: str
