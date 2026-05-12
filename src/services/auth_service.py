@@ -1,8 +1,9 @@
+from uuid import uuid4
 from fastapi import HTTPException
 from datetime import datetime, timedelta, timezone
 from redis.asyncio import Redis
 
-from src.core.security import verify_password, decode_token, create_token
+from src.core.security import verify_password, create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
 from src.core.config import settings
 from src.schemas.auth_schema import LoginRequest, TokenPair, AccessTokenData, RefreshTokenData
 from src.repositories.user_repository import UserRepository
@@ -21,69 +22,86 @@ class AuthService:
         self,
         request: LoginRequest
     ) -> TokenPair:
+        # CHECK CREDENTIALS
         user = await self.repo.get_user_by_email(request.email)
-
         if not user or not user.password or not verify_password(request.password, user.password):
             raise HTTPException(
                 status_code=401, 
                 detail="invalid email or password"
             )
         
-        access_token_payload = AccessTokenData(
+        # CREATE TOKEN PAYLOAD
+        access_payload = AccessTokenData(
             sub=user.id,
-            role=user.role_id,
+            role=user.role.name if user.role else None,
             exp=datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         )
-        refresh_token_payload = RefreshTokenData(
+        refresh_payload = RefreshTokenData(
             sub=user.id,
+            jti= str(uuid4()),
             exp=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         )
-
-        return TokenPair(
-            access_token=create_token(access_token_payload),
-            refresh_token=create_token(refresh_token_payload)
+        
+        # CREATE WHITELIST REFRESH TOKEN
+        ttl = int(
+            refresh_payload.exp.timestamp() - datetime.now(timezone.utc).timestamp()
         )
-    
+        await self.redis.set(
+            f"refresh:{refresh_payload.jti}", user.id, ex=ttl
+        )
+        
+        # RETURN ACCESS AND REFRESH TOKEN 
+        return TokenPair(
+            access_token=create_access_token(access_payload),
+            refresh_token=create_refresh_token(refresh_payload)
+        )
     
     async def refresh(
         self,
         refresh_token: str 
     ) -> TokenPair:
-        if await self.redis.exists(f"blacklist:{refresh_token}"):
+        # DECODE REFRESH TOKEN 
+        refresh_payload: RefreshTokenData = decode_refresh_token(refresh_token)
+
+        # CHECK WHITELIST
+        store_user_id = await self.redis.get(f"refresh:{refresh_payload.jti}")
+        if store_user_id is None:
             raise HTTPException(
-                status_code=401, 
-                detail="Token revoked"
+                status_code=401 , 
+                detail="Token revoked or invalid"
             )
 
-        payload: RefreshTokenData = decode_token(refresh_token)
-        if payload.type != "refresh":
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid token type"
-            )
-        user = await self.repo.get_user_by_id(payload.sub)
+        # CHECK USER
+        user = await self.repo.get_user_by_id(refresh_payload.sub)
         if not user:
             raise HTTPException(
                 status_code=401,
                 detail="User not found"
             )
         
-        access_token_payload = AccessTokenData(
+        # ROTATION WHITELIST: DELETE 
+        await self.redis.delete(f"refresh:{refresh_payload.jti}")
+
+        # NEW TOKEN
+        access_payload = AccessTokenData(
             sub=user.id,
-            role=user.role_id,
+            role=user.role.name if user.role else None,
             exp=datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         )
-        refresh_token_payload = RefreshTokenData(
+        refresh_payload = RefreshTokenData(
             sub=user.id,
+            jti=str(uuid4),
             exp=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         )
         
-        ttl = int(payload.exp.timestamp() - datetime.now(timezone.utc).timestamp())
-        await self.redis.set(f"blacklist:{refresh_token}", "1", ex=ttl)
+        # ROTATION WHITELIST: CREATE 
+        ttl = int(refresh_payload.exp.timestamp() - datetime.now(timezone.utc).timestamp())
+        await self.redis.set(f"refresh:{refresh_token}", user.id, ex=ttl)
 
+        # RETURN ACCESS AND REFRESH TOKEN 
         return TokenPair(
-            access_token=create_token(access_token_payload),
-            refresh_token=create_token(refresh_token_payload)
+            access_token=create_access_token(access_payload),
+            refresh_token=create_refresh_token(refresh_payload)
         )
 
     async def logout(
@@ -92,17 +110,15 @@ class AuthService:
         refresh_token: str,
         current_user_id: str,
     ) -> None:
-        payload_access_token: AccessTokenData = decode_token(access_token)
-        payload_refresh_token: RefreshTokenData = decode_token(refresh_token) 
+        access_payload: AccessTokenData = decode_access_token(access_token)
+        refresh_payload: RefreshTokenData = decode_refresh_token(refresh_token) 
 
-        if not (current_user_id == payload_access_token.sub == payload_refresh_token.sub):
+        if not (current_user_id == access_payload.sub == refresh_payload.sub):
             raise HTTPException(
                 status_code=401,
                 detail="Invalid Credentials"
             )
 
-        ttl_access_token = int(payload_access_token.exp.timestamp() - datetime.now(timezone.utc).timestamp())
-        ttl_refresh_token = int(payload_refresh_token.exp.timestamp() - datetime.now(timezone.utc).timestamp())
+        ttl = int(refresh_payload.exp.timestamp() - datetime.now(timezone.utc).timestamp())
 
-        await self.redis.set(f"blacklist:{access_token}", "1", ex=ttl_access_token)
-        await self.redis.set(f"blacklist:{refresh_token}", "1", ex=ttl_refresh_token)
+        await self.redis.set(f"blacklist:{refresh_payload.jti}", "1", ex=ttl)
