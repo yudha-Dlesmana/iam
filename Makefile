@@ -16,9 +16,6 @@ test-cov:
 
 stop:
 	docker compose stop
-
-down:
-	docker compose down
 	
 reset:
 	docker compose down -v
