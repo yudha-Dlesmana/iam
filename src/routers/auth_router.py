@@ -1,14 +1,13 @@
-from typing import Annotated
-
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import APIRouter, Depends, Response, Cookie
 
 from src.core.config import settings
 from src.core.dependency import get_auth_service, get_current_user, bearer_scheme
+from src.core.cookies import set_auth_cookie, clear_auth_cookie
 from src.services.auth_service import AuthService
 from src.models import User
 from src.schemas.user_schema import UserResponse
-from src.schemas.auth_schema import TokenResponse, LoginRequest
+from src.schemas.auth_schema import TokenBundle, TokenResponse, LoginRequest
 from src.schemas.base_schema import BaseResponse
 
 
@@ -23,17 +22,14 @@ async def login(
     response: Response,
     service: AuthService = Depends(get_auth_service)
 ):
-    pair = await service.login(request)
-    response.set_cookie(
-        key="refresh_token",
-        value=pair.refresh_token,
-        httponly=True,
-        secure=settings.is_production,
-        samesite="strict" if settings.is_production else "lax"
-    )
+    bundle: TokenBundle = await service.login(request)
+    set_auth_cookie(
+        response,
+        access_token=bundle.access_token, 
+        refresh_token=bundle.refresh_token, 
+        csrf_token=bundle.csrf_token)
     return BaseResponse(
         message="Login successful",
-        data=TokenResponse(access_token=pair.access_token)
     )
 
 @router.post(
@@ -45,19 +41,14 @@ async def refresh(
     refresh_token: str = Cookie(..., include_in_schema=False),
     service: AuthService = Depends(get_auth_service)
 ):
-    pair = await service.refresh(refresh_token)
-    response.set_cookie(
-        key="refresh_token",
-        value=pair.refresh_token,
-        httponly=True,
-        secure=settings.is_production,
-        samesite="strict" if settings.is_production else "lax"
-    )
+    bundle = await service.refresh(refresh_token)
+    set_auth_cookie(
+        response, 
+        access_token=bundle.access_token,
+        refresh_token=bundle.refresh_token,
+        csrf_token=bundle.csrf_token)
     return BaseResponse(
         message="Token refreshed",
-        data=TokenResponse(
-            access_token=pair.access_token,
-        )
     )
 
 @router.post(

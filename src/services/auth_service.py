@@ -1,5 +1,4 @@
 import secrets
-import secrets
 from uuid import uuid4
 from fastapi import HTTPException
 from datetime import datetime, timedelta, timezone
@@ -92,13 +91,13 @@ class AuthService:
         )
         refresh_payload = RefreshTokenData(
             sub=user.id,
-            jti=str(uuid4),
+            jti=str(uuid4()),
             exp=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         )
         
         # ROTATION WHITELIST: CREATE 
         ttl = int(refresh_payload.exp.timestamp() - datetime.now(timezone.utc).timestamp())
-        await self.redis.set(f"refresh:{refresh_token}", user.id, ex=ttl)
+        await self.redis.set(f"refresh:{refresh_payload.jti}", user.id, ex=ttl)
 
         # RETURN ACCESS AND REFRESH TOKEN 
         return TokenBundle(
@@ -124,4 +123,4 @@ class AuthService:
 
         ttl = int(refresh_payload.exp.timestamp() - datetime.now(timezone.utc).timestamp())
 
-        await self.redis.set(f"blacklist:{refresh_payload.jti}", "1", ex=ttl)
+        await self.redis.delete(f"refresh:{refresh_payload.jti}")
