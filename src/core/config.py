@@ -5,8 +5,11 @@ class Settings(BaseSettings):
         env_file=".env", 
         extra="ignore"
     )
+    ENV: str = "development"
     PORT: int = 8000
-    HOST: str = "127.0.0.1"
+    HOST: str = "localhost"
+
+    DB_URL: str
 
 
 settings = Settings()
