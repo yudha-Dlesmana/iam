@@ -10,4 +10,5 @@ async def seed() -> None:
         await seed_user(session)
     print("✓ seed complete")
 
-if __name__ == "__main__"
+if __name__ == "__main__":
+    asyncio.run(seed())
