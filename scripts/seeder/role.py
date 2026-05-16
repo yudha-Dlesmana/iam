@@ -8,6 +8,7 @@ async def seed_role(session: AsyncSession) -> None:
     for name in roles:
         exists = await session.scalar(select(Role).where(Role.name == name))
         if exists:
+            print(f"= user {name} (skip)")
             continue
         session.add(Role(name=name))
         print(f"+ role {name}")
