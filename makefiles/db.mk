@@ -1,10 +1,7 @@
 PYTHON := .venv/bin/python3
 ALEMBIC := .venv/bin/alembic
 
-.PHONY: db migrate upgrade downgrade seed setup
-
-db:
-	$(PYTHON) -m scripts.create_db
+.PHONY: migrate upgrade downgrade seed setup
 
 migrate:
 	$(ALEMBIC) revision --autogenerate -m "$(m)"
