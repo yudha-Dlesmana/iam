@@ -20,7 +20,7 @@ async def seed_user(session: AsyncSession) -> None:
 
     session.add(User(
         email=email,
-        password=ph.hash(PASSWORD)
+        password=ph.hash(PASSWORD),
         role_id = admin_role.id
     ))
 
