@@ -11,8 +11,3 @@ upgrade:
 
 downgrade:
 	$(ALEMBIC) downgrade -1
-
-seed:
-	$(PYTHON) -m scripts.seed
-
-setup: db upgrade seed
