@@ -9,7 +9,7 @@ PASSWORD="!Qwe123"
 ph = PasswordHasher()
 
 async def seed_user(session: AsyncSession) -> None:
-    admin_role = await session.scalar(select(Role).where(Role.name == "super admin"))
+    admin_role = await session.scalar(select(Role).where(Role.name == "super_admin"))
     if not admin_role:
         raise RuntimeError("super admin role missing, run seed_roles first")
     
@@ -19,7 +19,7 @@ async def seed_user(session: AsyncSession) -> None:
         return
 
     session.add(User(
-        email=email,
+        email=ADMIN,
         password=ph.hash(PASSWORD),
         role_id = admin_role.id
     ))
