@@ -27,8 +27,10 @@ class RoleRepository:
         result = await self.session.scalars(stmt)
         return list(result.all())
 
-    async def count(self) -> int:
+    async def count(self, name_like: str | None = None) -> int:
         stmt = select(func.count()).select_from(Role)
+        if name_like:
+            stmt = stmt.where(Role.name.ilike(f"%{name_like}%"))
         return await self.session.scalar(stmt) or 0
 
     async def create(self, role: Role) -> Role:
