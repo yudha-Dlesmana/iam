@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
-    
+
 class RoleCreate(BaseModel):
     name: str = Field(min_length=2, max_length=50)
 

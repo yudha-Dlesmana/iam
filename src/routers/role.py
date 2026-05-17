@@ -1,5 +1,5 @@
 from src.schemas.common import PaginatedResponse
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from src.schemas.role import RoleCreate, RoleUpdate, RoleResponse
 from src.lib.deps import RoleServiceDep
@@ -11,7 +11,7 @@ async def list_roles(
     service: RoleServiceDep,
     limit: int = 10,
     offset: int = 0,
-    name_like: str | None = None
+    name_like: str | None = Query(default=None, min_length=1, max_length=50)
 ):
     items, total = await service.get_all_paginated(limit, offset, name_like)
     return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
