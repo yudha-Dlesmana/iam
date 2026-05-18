@@ -17,7 +17,7 @@ class UserUpdate(BaseModel):
     @model_validator(mode="after")
     def at_least_one(self):
         if self.email is None and self.password is None and self.role_id is None:
-            raise ValueError("minimal satu field harus diisi")
+            raise ValueError("at least one field must be provided")
         return self
 
 
