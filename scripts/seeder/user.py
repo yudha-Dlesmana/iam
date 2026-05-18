@@ -5,7 +5,7 @@ from argon2 import PasswordHasher
 from src.models import User, Role
 
 ADMIN="super_admin@starter.com"
-PASSWORD="!Qwe123"
+PASSWORD="!Qwer123"
 ph = PasswordHasher()
 
 async def seed_user(session: AsyncSession) -> None:
