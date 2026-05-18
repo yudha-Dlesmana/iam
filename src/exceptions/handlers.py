@@ -15,7 +15,7 @@ async def app_exception_handler(request: Request, exc: Exception) -> JSONRespons
 async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
     errors = [
-        f"{'.'.join(str(x) for x in e['loc'][1:]): e['msg']}"
+        f"{'.'.join(str(x) for x in e['loc'][1:])}: {e['msg']}"
         for e in exc.errors()
     ]
     return JSONResponse(
