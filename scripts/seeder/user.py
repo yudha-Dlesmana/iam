@@ -1,12 +1,11 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from argon2 import PasswordHasher
 
 from src.models import User, Role
+from src.core.security import hash_password
 
 ADMIN="super_admin@starter.com"
-PASSWORD="!Qwe123"
-ph = PasswordHasher()
+PASSWORD="!Qwer123"
 
 async def seed_user(session: AsyncSession) -> None:
     admin_role = await session.scalar(select(Role).where(Role.name == "super_admin"))
@@ -20,7 +19,7 @@ async def seed_user(session: AsyncSession) -> None:
 
     session.add(User(
         email=ADMIN,
-        password=ph.hash(PASSWORD),
+        password=hash_password(PASSWORD),
         role_id = admin_role.id
     ))
 

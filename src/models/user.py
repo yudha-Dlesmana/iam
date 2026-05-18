@@ -23,3 +23,7 @@ class User(Base, TimestampMixin):
 
     role: Mapped[Role | None] = relationship(back_populates="users")
     oauth_accounts: Mapped[list[OauthAccount]] = relationship(back_populates="user")
+
+    @property
+    def role_name(self) -> str | None:
+        return self.role.name if self.role else None

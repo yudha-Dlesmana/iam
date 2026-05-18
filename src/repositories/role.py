@@ -40,6 +40,7 @@ class RoleRepository:
         return role
     
     async def update(self, role: Role) -> Role:
+        self.session.add(role)
         await self.session.commit()
         await self.session.refresh(role)
         return role
