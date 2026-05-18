@@ -14,10 +14,11 @@ async def app_exception_handler(request: Request, exc: Exception) -> JSONRespons
 
 async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
-    errors = [
-        f"{'.'.join(str(x) for x in e['loc'][1:])}: {e['msg']}"
-        for e in exc.errors()
-    ]
+    errors = []
+    for e in exc.errors():
+        field = ".".join(str(x) for x in e["loc"][1:]) or "body"
+        msg = e["msg"].removeprefix("Value error, ")
+        errors.append(f"{field}: {msg}")
     return JSONResponse(
         status_code=422,
         content={"message": "validation error", "errors": errors}
