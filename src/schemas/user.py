@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, model_validator
 
 from src.schemas.validators import StrongPassword
@@ -26,6 +25,6 @@ class UserResponse(BaseModel):
 
     id: str
     email: EmailStr
-    role_id: int | None
+    role_name: str | None
     created_at: datetime
     updated_at: datetime
