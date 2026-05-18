@@ -1,0 +1,38 @@
+from src.models import Role
+from src.schemas.role import RoleCreate, RoleUpdate
+from src.repositories.role import RoleRepository
+from src.exceptions.base import NotFoundError, ConflictError
+
+class RoleService:
+    def __init__(self, repo: RoleRepository):
+        self.repo = repo
+
+    async def get(self, id: int) -> Role:
+        role = await self.repo.get_by_id(id)
+        if not role:
+            raise NotFoundError(f"role {id} not found")
+        return role
+
+    async def get_all_paginated(
+        self, limit: int = 10, offset: int = 0, name_like: str | None = None
+    ) -> tuple[list[Role], int]:
+        items = await self.repo.get_all(limit, offset, name_like)
+        total = await self.repo.count(name_like)
+        return items, total
+
+    async def create(self, data: RoleCreate) -> Role:
+        if await self.repo.get_by_name(data.name):
+            raise ConflictError(f"role '{data.name}' already exists")
+        return await self.repo.create(Role(name=data.name))
+    
+    async def update(self, id: int, data: RoleUpdate) -> Role:
+        role = await self.get(id)
+        if data.name and data.name != role.name:
+            if await self.repo.get_by_name(data.name):
+                raise ConflictError(f"role '{data.name}' already exists")
+            role.name = data.name
+        return await self.repo.update(role)
+
+    async def delete(self, id: int) -> None:
+        role = await self.get(id)
+        await self.repo.delete(role)
