@@ -4,8 +4,7 @@ from uuid import uuid4
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import Base
-from src.models.mixins import TimestampMixin
+from src.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from src.models.role import Role
