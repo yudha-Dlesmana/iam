@@ -34,22 +34,13 @@ class RoleRepository:
             stmt = stmt.where(Role.name.ilike(f"%{name_like}%"))
         return await self.session.scalar(stmt) or 0
 
-    async def save(self, role: Role) -> Role:
-        try:
-            self.session.add(role)
-            await self.session.commit()
-            await self.session.refresh(role)
-            return role
-        except IntegrityError:
-            await self.session.rollback()
-            raise
+    async def save(self, role: Role) -> Role:    
+        self.session.add(role)
+        await self.session.flush()
+        await self.session.refresh(role)
+        return role
     
     async def delete(self, role: Role) -> None:
-        try:
-            await self.session.delete(role)
-            await self.session.commit()
-        except IntegrityError:
-            await self.session.rollback()
-            raise
-
+        await self.session.delete(role)
+        await self.session.flush()
     

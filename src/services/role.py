@@ -38,9 +38,7 @@ class RoleService:
 
     async def delete(self, id: int) -> None:
         role = await self.get(id)
-        if not role:
-            raise NotFoundError("role not found")
-
+        
         try:
             await self.repo.delete(role)
         except IntegrityError:
