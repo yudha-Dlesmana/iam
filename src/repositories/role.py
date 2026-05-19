@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,19 +34,18 @@ class RoleRepository:
             stmt = stmt.where(Role.name.ilike(f"%{name_like}%"))
         return await self.session.scalar(stmt) or 0
 
-    async def create(self, role: Role) -> Role:
-        self.session.add(role)
-        await self.session.commit()
-        await self.session.refresh(role)
-        return role
-    
-    async def update(self, role: Role) -> Role:
+    async def save(self, role: Role) -> Role:
         self.session.add(role)
         await self.session.commit()
         await self.session.refresh(role)
         return role
     
     async def delete(self, role: Role) -> None:
-        await self.session.delete(role)
-        await self.session.commit()
+        try:
+            await self.session.delete(role)
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            raise
+
     

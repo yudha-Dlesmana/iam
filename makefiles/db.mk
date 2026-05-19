@@ -10,7 +10,7 @@ upgrade:
 	$(ALEMBIC) upgrade head
 
 downgrade:
-	$(ALEMBIC) downgrade -1
+	$(ALEMBIC) downgrade base
 
 seed:
 	$(PYTHON) -m scripts.seed

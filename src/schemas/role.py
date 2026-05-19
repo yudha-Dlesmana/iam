@@ -1,11 +1,14 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
+
+from src.schemas.validators import RoleName
+
 
 class RoleCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=50)
+    name: RoleName
 
 class RoleUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=2, max_length=50)
+    name: RoleName | None = None
 
 class RoleResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

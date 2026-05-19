@@ -18,3 +18,14 @@ StrongPassword = Annotated[
     Field(min_length=8, max_length=64),
     AfterValidator(_validate_password_strength)
 ]
+
+def _validate_no_whitespace(v: str) -> str:
+    if any(c.isspace() for c in v):
+        raise ValueError("must not contain whitespace (use '_' instead)")
+    return v
+
+RoleName = Annotated[
+    str,
+    Field(min_length=2, max_length=50),
+    AfterValidator(_validate_no_whitespace)
+]
