@@ -1,7 +1,7 @@
-from src.schemas.common import PaginatedResponse
 from fastapi import APIRouter, Query, status
 
-from src.schemas.role import RoleCreate, RoleUpdate, RoleResponse
+from src.schemas.role import RoleRequest, RoleResponse
+from src.schemas.common import PaginatedResponse
 from src.lib.deps import RoleServiceDep
 
 router = APIRouter(prefix="/roles", tags=["roles"])
@@ -17,7 +17,7 @@ async def list_roles(
     return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 @router.post("", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
-async def create_role(data: RoleCreate, service: RoleServiceDep):
+async def create_role(data: RoleRequest, service: RoleServiceDep):
     return await service.create(data)
 
 @router.get("/{id}", response_model=RoleResponse)
@@ -25,7 +25,7 @@ async def get_role(id: int, service: RoleServiceDep):
     return await service.get(id)
 
 @router.patch("/{id}", response_model=RoleResponse)
-async def update_role(id: int, data: RoleUpdate, service: RoleServiceDep):
+async def update_role(id: int, data: RoleRequest, service: RoleServiceDep):
     return await service.update(id, data)
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

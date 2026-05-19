@@ -1,5 +1,5 @@
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Role
@@ -35,10 +35,14 @@ class RoleRepository:
         return await self.session.scalar(stmt) or 0
 
     async def save(self, role: Role) -> Role:
-        self.session.add(role)
-        await self.session.commit()
-        await self.session.refresh(role)
-        return role
+        try:
+            self.session.add(role)
+            await self.session.commit()
+            await self.session.refresh(role)
+            return role
+        except IntegrityError:
+            await self.session.rollback()
+            raise
     
     async def delete(self, role: Role) -> None:
         try:
