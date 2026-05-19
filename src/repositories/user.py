@@ -37,10 +37,10 @@ class UserRepository:
     
     async def save(self, user: User) -> User:
         self.session.add(user)
-        await self.session.commit()
-        await self.session.refresh(user, ["created_at","updated_at","role"])
+        await self.session.flush()
+        await self.session.refresh(user, ["role","created_at","updated_at"])
         return user
 
     async def delete(self, user: User) -> None:
         await self.session.delete(user)
-        await self.session.commit()
+        await self.session.flush()
