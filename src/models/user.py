@@ -22,7 +22,11 @@ class User(Base, TimestampMixin):
     role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"))
 
     role: Mapped[Role | None] = relationship(back_populates="users")
-    oauth_accounts: Mapped[list[OauthAccount]] = relationship(back_populates="user")
+    oauth_accounts: Mapped[list[OauthAccount]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     @property
     def role_name(self) -> str | None:
