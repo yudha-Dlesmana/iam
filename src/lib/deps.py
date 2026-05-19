@@ -22,7 +22,7 @@ def get_role_service(session: DbSession) -> RoleService:
     return RoleService(RoleRepository(session))
 
 def get_user_service(session: DbSession) -> UserService:
-    return UserService(UserRepository(session), RoleRepository(session))
+    return UserService(UserRepository(session))
 
 HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
 RoleServiceDep = Annotated[RoleService, Depends(get_role_service)]
