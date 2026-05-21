@@ -19,7 +19,9 @@ class User(Base, TimestampMixin):
     )
     email: Mapped[str] = mapped_column(String(255), unique=True)
     password: Mapped[str | None] = mapped_column(String(255))
-    role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id", ondelete="RESTRICT"))
+    role_id: Mapped[int | None] = mapped_column(
+        ForeignKey("roles.id", ondelete="RESTRICT")
+    )
 
     role: Mapped[Role | None] = relationship(back_populates="users")
     oauth_accounts: Mapped[list[OauthAccount]] = relationship(

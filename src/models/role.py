@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 class Role(Base, TimestampMixin):
     __tablename__ = "roles"
     __table_args__ = (
-        CheckConstraint("name NOT REGEXP '[[:space:]]'", name="role_name_no_whitespace"),
+        CheckConstraint(
+            "name NOT REGEXP '[[:space:]]'", name="role_name_no_whitespace"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
