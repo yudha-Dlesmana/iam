@@ -7,6 +7,10 @@ class Settings(BaseSettings):
     PORT: int = 8000
     HOST: str = "localhost"
 
+    
+    FRONTEND_URL: str = "http://localhost:9000"
+    COOKIE_DOMAIN: str = ""
+    
     DB_URL: str
     TEST_DB_URL: str
 

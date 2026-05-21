@@ -9,6 +9,7 @@ from src.repositories.health import HealthRepository
 from src.repositories.role import RoleRepository
 from src.repositories.user import UserRepository
 from src.services.health import HealthService
+from src.services.auth import AuthService
 from src.services.role import RoleService
 from src.services.user import UserService
 
@@ -20,6 +21,10 @@ def get_health_service(session: DbSession, redis: RedisClient) -> HealthService:
     return HealthService(HealthRepository(session, redis))
 
 
+def get_auth_service(session: DbSession, redis: RedisClient) -> AuthService:
+    return AuthService(UserRepository(session), redis)
+
+
 def get_role_service(session: DbSession) -> RoleService:
     return RoleService(RoleRepository(session))
 
@@ -29,5 +34,6 @@ def get_user_service(session: DbSession) -> UserService:
 
 
 HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
+AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 RoleServiceDep = Annotated[RoleService, Depends(get_role_service)]
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]

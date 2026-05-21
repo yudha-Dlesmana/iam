@@ -96,11 +96,18 @@ async def consume_refresh(r: Redis, jti: str) -> dict | None:
     if status == "REUSE":
         await revoke_family(r, res[1])
         return None
-    return {"sub": res[1], "fam": res[2]}
+    sub, fam = res[1], res[2]
+    await r.srem(f"fam:{fam}", jti)
+    return {"sub": sub, "fam": fam}
 
 
 async def revoke_refresh(r: Redis, jti: str) -> None:
-    await r.delete(f"refresh:{jti}")
+    fam = await r.hget(f"refresh:{jti}", "tufam")
+    pipe = r.pipeline()
+    pipe.delete(f"refresh:{jti}")
+    if fam:
+        pipe.srem(f"fam:{fam}", jti)
+    await pipe.execute()
 
 
 async def revoke_family(r: Redis, fam: str) -> None:
