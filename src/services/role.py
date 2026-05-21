@@ -2,16 +2,26 @@ from sqlalchemy.exc import IntegrityError
 from src.models import Role
 from src.schemas.role import RoleRequest
 from src.repositories.role import RoleRepository
-from src.exceptions.base import NotFoundError, ConflictError
+from src.exceptions.base import NotFoundError, ConflictError, ValidationError
+from src.lib.db_errors import is_check_violation, is_unique_violation
+
 
 class RoleService:
     def __init__(self, repo: RoleRepository):
         self.repo = repo
 
+    @staticmethod
+    def _save_error(e: IntegrityError) -> Exception:
+        if is_unique_violation(e):
+            return ConflictError("role already exists")
+        if is_check_violation(e, "role_name_no_whitespace"):
+            return ValidationError("role must not contain whitespace")
+        return e
+
     async def get(self, id: int) -> Role:
         role = await self.repo.get_by_id(id)
         if not role:
-            raise NotFoundError(f"role not found")
+            raise NotFoundError("role not found")
         return role
 
     async def get_all_paginated(
@@ -24,8 +34,8 @@ class RoleService:
     async def create(self, data: RoleRequest) -> Role:
         try:
             return await self.repo.save(Role(name=data.name))
-        except IntegrityError:
-            raise ConflictError(f"{data.name} already exists or invalid")
+        except IntegrityError as e:
+            raise self._name_error(data.name, e)
 
     async def update(self, id: int, data: RoleRequest) -> Role:
         role = await self.get(id)
@@ -33,12 +43,12 @@ class RoleService:
 
         try:
             return await self.repo.save(role)
-        except IntegrityError:
-            raise ConflictError(f"{data.name} already exists or invalid")
+        except IntegrityError as e:
+            raise self._save_error(e) from e
 
     async def delete(self, id: int) -> None:
         role = await self.get(id)
-        
+
         try:
             await self.repo.delete(role)
         except IntegrityError:
