@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
 from fastapi.responses import RedirectResponse
 from fastapi import FastAPI
-from src.core.database import engine
 
-from src.routers.api import router as api_router
+from src.core.database import engine
+from src.core.cors import register_cors
 from src.exceptions.handlers import register_exception_handlers
+from src.routers.api import router as api_router
 
 
 @asynccontextmanager
@@ -15,6 +16,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 register_exception_handlers(app)
+register_cors(app)
 
 
 @app.get("/", include_in_schema=False)
