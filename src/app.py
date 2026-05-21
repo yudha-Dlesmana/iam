@@ -16,8 +16,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 register_exception_handlers(app)
 
+
 @app.get("/", include_in_schema=False)
 def default():
     return RedirectResponse("/docs")
+
 
 app.include_router(api_router)
