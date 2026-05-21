@@ -12,7 +12,10 @@ async def app_exception_handler(request: Request, exc: Exception) -> JSONRespons
         content={"message": exc.message},
     )
 
-async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+
+async def validation_exception_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
     errors = []
     for e in exc.errors():
@@ -20,9 +23,9 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
         msg = e["msg"].removeprefix("Value error, ")
         errors.append(f"{field}: {msg}")
     return JSONResponse(
-        status_code=422,
-        content={"message": "validation error", "errors": errors}
+        status_code=422, content={"message": "validation error", "errors": errors}
     )
+
 
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AppException, app_exception_handler)

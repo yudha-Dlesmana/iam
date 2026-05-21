@@ -7,15 +7,17 @@ class AppException(Exception):
             self.message = message
         super().__init__(self.message)
 
+
 class NotFoundError(AppException):
     status_code = 404
-    message="resource not found"
+    message = "resource not found"
+
 
 class ConflictError(AppException):
     status_code = 409
     message = "resource conflict"
 
+
 class ValidationError(AppException):
     status_code = 422
     message = "validation error"
-
