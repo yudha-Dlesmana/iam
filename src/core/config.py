@@ -12,5 +12,8 @@ class Settings(BaseSettings):
 
     REDIS_URL: str
 
+    JWT_ACCESS_SECRET: str
+    JWT_REFRESH_SECRET: str
+
 
 settings = Settings()
