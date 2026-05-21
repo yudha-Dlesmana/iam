@@ -7,10 +7,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
     HOST: str = "localhost"
 
-    
-    FRONTEND_URL: str = "http://localhost:9000"
+    FRONTEND_URLs: str = "http://localhost:9000"
     COOKIE_DOMAIN: str = ""
-    
+
     DB_URL: str
     TEST_DB_URL: str
 
@@ -18,6 +17,10 @@ class Settings(BaseSettings):
 
     JWT_ACCESS_SECRET: str
     JWT_REFRESH_SECRET: str
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [u.strip() for u in self.FRONTEND_URLs.split(",") if u.strip()]
 
 
 settings = Settings()
