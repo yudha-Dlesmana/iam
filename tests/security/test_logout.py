@@ -8,8 +8,7 @@ async def test_logout_revokes_and_cleans_family(user, redis, auth):
     res = await auth.logout(r1)
     assert res.status_code == 204
 
-    assert await redis.keys("refresh:*") == []
-    assert await redis.keys("fam:*") == []
+    assert await redis.keys("sessions:*") == []
 
     res = await auth.refresh(r1)
     assert res.status_code == 401
