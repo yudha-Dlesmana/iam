@@ -1,4 +1,5 @@
 import pytest_asyncio
+import pytest
 from httpx import AsyncClient, ASGITransport
 from redis.asyncio import from_url
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -51,3 +52,39 @@ async def client(db, redis):
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
+
+
+LOGIN = "/v1/auth/login"
+REFRESH = "/v1/auth/refresh"
+LOGOUT = "/v1/auth/logout"
+ALL_LOGOUT = "/v1/auth/all-logout"
+ME = "/v1/auth/current-user"
+CREDENTIALS = {"email": "test@starter.com", "password": "!Qwer123"}
+
+
+@pytest.fixture
+def auth(client):
+    class Auth:
+        async def post_with_cookie(self, path, token):
+            client.cookies.clear()
+            client.cookies.set("refresh_token", token, path="/v1/auth")
+            return await client.post(path)
+
+        async def login(self):
+            return await client.post(LOGIN, json=CREDENTIALS)
+
+        async def refresh(self, token):
+            return await self.post_with_cookie(REFRESH, token)
+
+        async def logout(self, token):
+            return await self.post_with_cookie(LOGOUT, token)
+
+        async def all_logout(self, token):
+            return await self.post_with_cookie(ALL_LOGOUT, token)
+
+        async def me(self, access_token):
+            return await client.get(
+                ME, headers={"Authorization": f"Bearer {access_token}"}
+            )
+
+    return Auth()

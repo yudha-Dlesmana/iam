@@ -33,7 +33,7 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
 async def login(data: LoginRequest, response: Response, service: AuthServiceDep):
     pair = await service.login(data.email, data.password)
     _set_refresh_cookie(response, pair.refresh_token)
-    return TokenResponse(access_token=pair.refresh_token)
+    return TokenResponse(access_token=pair.access_token)
 
 
 @router.post("/refresh", response_model=TokenResponse)
