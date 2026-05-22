@@ -102,7 +102,7 @@ async def consume_refresh(r: Redis, jti: str) -> dict | None:
 
 
 async def revoke_refresh(r: Redis, jti: str) -> None:
-    fam = await r.hget(f"refresh:{jti}", "tufam")
+    fam = await r.hget(f"refresh:{jti}", "fam")
     pipe = r.pipeline()
     pipe.delete(f"refresh:{jti}")
     if fam:

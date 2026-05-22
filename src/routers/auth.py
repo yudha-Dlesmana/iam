@@ -67,6 +67,24 @@ async def logout(
     )
 
 
+@router.post("/all-logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_all(
+    response: Response,
+    service: AuthServiceDep,
+    refresh_token: Annotated[str | None, Cookie(include_in_schema=False)] = None,
+):
+    if refresh_token:
+        await service.logout(refresh_token)
+    response.delete_cookie(
+        REFRESH_COOKIE,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path=COOKIE_PATH,
+        domain=settings.COOKIE_DOMAIN or None,
+    )
+
+
 @router.get("/current-user", response_model=UserResponse)
 async def currect_user(uid: CurrentUserId, service: UserServiceDep):
     return await service.get(uid)
