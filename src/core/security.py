@@ -68,16 +68,6 @@ def decode_refresh_token(token: str) -> dict:
     return jwt.decode(token, settings.JWT_REFRESH_SECRET, algorithms=[ALGORITHM])
 
 
-async def store_refresh(r: Redis, jti: str, fam: str, sub: str):
-    ttl = int(REFRESH_TTL.total_seconds())
-    pipe = r.pipeline()
-    pipe.hset(f"refresh:{jti}", mapping={"sub": sub, "fam": fam, "used": "0"})
-    pipe.expire(f"refresh:{jti}", ttl)
-    pipe.sadd(f"fam:{fam}", jti)
-    pipe.expire(f"fam:{fam}", ttl)
-    await pipe.execute()
-
-
 async def store_session(
     r: Redis, user_id: str, device: str, jti: str, ip: str, ua: str
 ) -> None:
@@ -90,31 +80,6 @@ async def store_session(
     pipe.hset(f"sessions:{user_id}", device, val)
     pipe.expire(f"sessions:{user_id}", ttl)
     await pipe.execute()
-
-
-_CONSUME_LUA = """
-local used = redis.call('HGET', KEYS[1], 'used')
-if used == false then
-    return {'MISSING'}
-end
-if used == '1' then
-    return {'REUSE', redis.call('HGET', KEYS[1], 'fam')}
-end
-redis.call('HSET', KEYS[1], 'used', '1')
-return {"OK", redis.call('HGET', KEYS[1], 'sub'), redis.call('HGET', KEYS[1], 'fam')}
-"""
-
-
-async def consume_refresh(r: Redis, jti: str) -> dict | None:
-    res = await r.eval(_CONSUME_LUA, 1, f"refresh:{jti}")
-    status = res[0]
-    if status == "MISSING":
-        return None
-    if status == "REUSE":
-        await revoke_family(r, res[1])
-        return None
-    sub, fam = res[1], res[2]
-    return {"sub": sub, "fam": fam}
 
 
 _ROTATE_LUA = """
@@ -144,26 +109,8 @@ async def rotate_session(
     return res[0]
 
 
-async def revoke_refresh(r: Redis, jti: str) -> None:
-    fam = await r.hget(f"refresh:{jti}", "fam")
-    pipe = r.pipeline()
-    pipe.delete(f"refresh:{jti}")
-    if fam:
-        pipe.srem(f"fam:{fam}", jti)
-    await pipe.execute()
-
-
 async def revoke_device(r: Redis, user_id: str, device: str) -> None:
     await r.hdel(f"sessions:{user_id}", device)
-
-
-async def revoke_family(r: Redis, fam: str) -> None:
-    jtis = await r.smembers(f"fam:{fam}")
-    pipe = r.pipeline()
-    for j in jtis:
-        pipe.delete(f"refresh:{j}")
-    pipe.delete(f"fam:{fam}")
-    await pipe.execute()
 
 
 async def revoke_user(r: Redis, user_id: str) -> None:

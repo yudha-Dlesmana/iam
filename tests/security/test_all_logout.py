@@ -7,5 +7,4 @@ async def test_all_logout_kill_whole_family(user, redis, auth):
     res = await auth.all_logout(r2)
     assert res.status_code == 204
 
-    assert await redis.keys("refresh:*") == []
-    assert await redis.keys("fam:*") == []
+    assert await redis.keys("sessions:*") == []

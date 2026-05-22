@@ -33,5 +33,4 @@ async def test_old_refresh_reuse_revokes_family(user, redis, auth):
     res = await auth.refresh(r2)
     assert res.status_code == 401
 
-    assert await redis.keys("refresh:*") == []
-    assert await redis.keys("fam:*") == []
+    assert await redis.keys("sessions:*") == []

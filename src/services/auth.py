@@ -32,7 +32,6 @@ class AuthService:
 
         access_token = create_access_token(user)
         refresh_token, jti, device = create_refresh_token(user.id)
-        # await store_refresh(self.redis, jti, fam, user.id)
         await store_session(self.redis, user.id, device, jti, ip, ua)
         return TokenPair(access_token=access_token, refresh_token=refresh_token)
 
@@ -46,9 +45,6 @@ class AuthService:
         device = payload["device"]
         old_jti = payload["jti"]
 
-        # data = await consume_refresh(self.redis, payload["jti"])
-        # if data is None:
-        #     raise UnauthorizedError("token revoke or reused")
         new_refresh_token, new_jti, _ = create_refresh_token(user_id, device)
         status = await rotate_session(self.redis, user_id, device, old_jti, new_jti, ip)
 
@@ -71,14 +67,14 @@ class AuthService:
         except jwt.InvalidTokenError:
             return
 
-        await revoke_device(self.redis, payload["jti"])
+        await revoke_device(self.redis, payload["sub"], payload["device"])
 
     async def logout_all(self, token: str) -> None:
         try:
             payload = decode_refresh_token(token)
         except jwt.InvalidTokenError:
             return
-        await revoke_user(self.redis, payload["fam"])
+        await revoke_user(self.redis, payload["sub"])
 
     async def sessions(self, user_id: str) -> list[dict]:
         return await list_sessions(self.redis, user_id)
