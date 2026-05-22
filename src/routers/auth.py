@@ -40,7 +40,7 @@ async def login(data: LoginRequest, response: Response, service: AuthServiceDep)
 async def refresh(
     response: Response,
     service: AuthServiceDep,
-    refresh_token: Annotated[str | None, Cookie()] = None,
+    refresh_token: Annotated[str | None, Cookie(include_in_schema=False)] = None,
 ):
     if not refresh_token:
         raise UnauthorizedError("missing refresh token")
@@ -53,7 +53,7 @@ async def refresh(
 async def logout(
     response: Response,
     service: AuthServiceDep,
-    refresh_token: Annotated[str | None, Cookie()] = None,
+    refresh_token: Annotated[str | None, Cookie(include_in_schema=False)] = None,
 ):
     if refresh_token:
         await service.logout(refresh_token)
