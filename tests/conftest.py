@@ -3,6 +3,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from redis.asyncio import from_url
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.pool import NullPool
 
 from src.app import app
 from src.core.config import settings
@@ -11,7 +12,7 @@ from src.core.redis import get_redis
 from src.core.security import hash_password
 from src.models import Base, User
 
-test_engine = create_async_engine(settings.TEST_DB_URL)
+test_engine = create_async_engine(settings.TEST_DB_URL, poolclass=NullPool)
 TestSession = async_sessionmaker(
     bind=test_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )

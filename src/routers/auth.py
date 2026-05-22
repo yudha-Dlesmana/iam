@@ -74,7 +74,7 @@ async def logout_all(
     refresh_token: Annotated[str | None, Cookie(include_in_schema=False)] = None,
 ):
     if refresh_token:
-        await service.logout(refresh_token)
+        await service.logout_all(refresh_token)
     response.delete_cookie(
         REFRESH_COOKIE,
         httponly=True,
