@@ -13,6 +13,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 
 REFRESH_COOKIE = "refresh_token"
 COOKIE_PATH = "/v1/auth"
+_SAMESITE = "none" if settings.is_production else "lax"
 
 
 def _set_refresh_cookie(response: Response, token: str) -> None:
@@ -20,17 +21,17 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
         key=REFRESH_COOKIE,
         value=token,
         httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=int(REFRESH_TTL.total_second()),
+        secure=settings.is_production,
+        samesite=_SAMESITE,
+        max_age=int(REFRESH_TTL.total_seconds()),
         path=COOKIE_PATH,
-        domain=settings.REFRESH_COOKIE or None,
+        domain=settings.COOKIE_DOMAIN or None,
     )
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(data: LoginRequest, response: Response, service: AuthServiceDep):
-    pair = await service.login(data.emai, data.password)
+    pair = await service.login(data.email, data.password)
     _set_refresh_cookie(response, pair.refresh_token)
     return TokenResponse(access_token=pair.refresh_token)
 

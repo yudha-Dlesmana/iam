@@ -22,5 +22,9 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [u.strip() for u in self.FRONTEND_URLs.split(",") if u.strip()]
 
+    @property
+    def is_production(self) -> bool:
+        return self.ENV != "development"
+
 
 settings = Settings()
