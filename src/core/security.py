@@ -97,7 +97,6 @@ async def consume_refresh(r: Redis, jti: str) -> dict | None:
         await revoke_family(r, res[1])
         return None
     sub, fam = res[1], res[2]
-    await r.srem(f"fam:{fam}", jti)
     return {"sub": sub, "fam": fam}
 
 
