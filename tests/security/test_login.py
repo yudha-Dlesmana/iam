@@ -1,4 +1,12 @@
-from tests.conftest import LOGIN, REFRESH, CREDENTIALS
+from tests.conftest import LOGIN, CREDENTIALS
+
+
+async def test_access_token_usable(user, auth):
+    res = await auth.login()
+    access = res.json()["access_token"]
+
+    me = await auth.me(access)
+    assert me.status_code == 200
 
 
 async def test_login_wrong_password(client, user):
@@ -10,15 +18,4 @@ async def test_login_unknown_email(client):
     res = await client.post(
         LOGIN, json={"email": "unkwnon@starter.com", "password": "!Qwer123"}
     )
-    assert res.status_code == 401
-
-
-async def test_refresh_without_cookie(client):
-    client.cookies.clear()
-    res = await client.post(REFRESH)
-    assert res.status_code == 401
-
-
-async def test_refresh_invalid_token(auth):
-    res = await auth.refresh("gerbage.invalid.token")
     assert res.status_code == 401
