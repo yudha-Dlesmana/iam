@@ -9,7 +9,7 @@ async def _refresh(client, token):
     return await client.post(REFRESH)
 
 
-async def test_old_refresh_reuse_revokes_family(client, user):
+async def test_old_refresh_reuse_revokes_family(client, user, redis):
     # login
     res = await client.post(LOGIN, json=CREDENTIALS)
     assert res.status_code == 200
@@ -29,3 +29,6 @@ async def test_old_refresh_reuse_revokes_family(client, user):
     # reuse trigger revoke_family
     res = await _refresh(client, r2)
     assert res.status_code == 401
+
+    assert await redis.keys("refresh:*") == []
+    assert await redis.keys("fam:*") == []
