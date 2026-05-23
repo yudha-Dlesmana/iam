@@ -59,6 +59,7 @@ LOGIN = "/v1/auth/login"
 REFRESH = "/v1/auth/refresh"
 LOGOUT = "/v1/auth/logout"
 ALL_LOGOUT = "/v1/auth/all-logout"
+SESSIONS = "/v1/auth/sessions"
 ME = "/v1/auth/current-user"
 CREDENTIALS = {"email": "test@starter.com", "password": "!Qwer123"}
 
@@ -83,9 +84,26 @@ def auth(client):
         async def all_logout(self, token):
             return await self.post_with_cookie(ALL_LOGOUT, token)
 
+        async def sessions(self, access_token):
+            return await client.get(
+                SESSIONS, headers={"Authorization": f"Bearer {access_token}"}
+            )
+
         async def me(self, access_token):
             return await client.get(
                 ME, headers={"Authorization": f"Bearer {access_token}"}
             )
 
     return Auth()
+
+
+ROLES = "v1/roles"
+
+
+@pytest.fixture
+def role(client):
+    class Role:
+        async def post_role(self, role):
+            return await client.post(ROLES, json={"name": role})
+
+    return Role()
