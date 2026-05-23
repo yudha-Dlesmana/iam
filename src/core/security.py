@@ -68,6 +68,13 @@ def decode_refresh_token(token: str) -> dict:
     return jwt.decode(token, settings.JWT_REFRESH_SECRET, algorithms=[ALGORITHM])
 
 
+async def peek_session(r: Redis, user_id: str, device: str, jti: str) -> bool:
+    cur = await r.hget(f"sessions:{user_id}", device)
+    if cur is None:
+        return False
+    return json.loads(cur)["jti"] == jti
+
+
 async def store_session(
     r: Redis, user_id: str, device: str, jti: str, ip: str, ua: str
 ) -> None:

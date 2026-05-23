@@ -9,6 +9,7 @@ from src.core.security import (
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
+    peek_session,
     store_session,
     rotate_session,
     revoke_device,
@@ -75,6 +76,15 @@ class AuthService:
         except jwt.InvalidTokenError:
             return
         await revoke_user(self.redis, payload["sub"])
+
+    async def validate(self, token: str) -> bool:
+        try:
+            payload = decode_refresh_token(token)
+        except jwt.InvalidTokenError:
+            return False
+        return await peek_session(
+            self.redis, payload["sub"], payload["device"], payload["jti"]
+        )
 
     async def sessions(self, user_id: str) -> list[dict]:
         return await list_sessions(self.redis, user_id)
