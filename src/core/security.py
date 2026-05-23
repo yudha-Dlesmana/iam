@@ -121,7 +121,7 @@ async def list_sessions(r: Redis, user_id: str) -> list[dict]:
     raw = await r.hgetall(f"sessions:{user_id}")
     out = []
     for device, val in raw.items():
-        data = json.load(val)
+        data = json.loads(val)
         data.pop("jti", None)
         data["device"] = device
         out.append(data)

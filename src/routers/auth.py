@@ -5,7 +5,7 @@ from src.core.config import settings
 from src.core.security import REFRESH_TTL
 from src.exceptions.base import UnauthorizedError
 from src.lib.deps import AuthServiceDep, CurrentUserId, UserServiceDep
-from src.schemas.auth import LoginRequest, TokenResponse
+from src.schemas.auth import LoginRequest, TokenResponse, SessionResponse
 from src.schemas.user import UserResponse
 
 
@@ -31,6 +31,17 @@ def _set_refresh_cookie(response: Response, token: str) -> None:
         secure=settings.is_production,
         samesite=_SAMESITE,
         max_age=int(REFRESH_TTL.total_seconds()),
+        path=COOKIE_PATH,
+        domain=settings.COOKIE_DOMAIN or None,
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        REFRESH_COOKIE,
+        httponly=True,
+        secure=settings.is_production,
+        samesite=_SAMESITE,
         path=COOKIE_PATH,
         domain=settings.COOKIE_DOMAIN or None,
     )
@@ -72,14 +83,7 @@ async def logout(
 ):
     if refresh_token:
         await service.logout(refresh_token)
-    response.delete_cookie(
-        REFRESH_COOKIE,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path=COOKIE_PATH,
-        domain=settings.COOKIE_DOMAIN or None,
-    )
+    _clear_refresh_cookie(response)
 
 
 @router.post("/all-logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -90,17 +94,10 @@ async def logout_all(
 ):
     if refresh_token:
         await service.logout_all(refresh_token)
-    response.delete_cookie(
-        REFRESH_COOKIE,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        path=COOKIE_PATH,
-        domain=settings.COOKIE_DOMAIN or None,
-    )
+    _clear_refresh_cookie(response)
 
 
-@router.get("/sessions")
+@router.get("/sessions", response_model=list[SessionResponse])
 async def sessions(uid: CurrentUserId, service: AuthServiceDep):
     return await service.sessions(uid)
 
