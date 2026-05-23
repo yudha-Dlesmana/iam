@@ -1,6 +1,20 @@
 import json
 
 
+async def test_list_sessions(user, auth):
+    await auth.login()
+    res = await auth.login()
+    access_token = res.json()["access_token"]
+
+    out = await auth.sessions(access_token)
+    assert out.status_code == 200
+
+    data = out.json()
+    assert len(data) == 2
+    assert "ip" in data[0]
+    assert "jti" not in data[0]
+
+
 async def test_logout_one_device_keeps_others(user, redis, auth):
     a = (await auth.login()).cookies.get("refresh_token")
     b = (await auth.login()).cookies.get("refresh_token")
