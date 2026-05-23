@@ -35,7 +35,7 @@ class RoleService:
         try:
             return await self.repo.save(Role(name=data.name))
         except IntegrityError as e:
-            raise self._name_error(data.name, e)
+            raise self._save_error(e) from e
 
     async def update(self, id: int, data: RoleRequest) -> Role:
         role = await self.get(id)

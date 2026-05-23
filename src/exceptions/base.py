@@ -21,3 +21,8 @@ class ConflictError(AppException):
 class ValidationError(AppException):
     status_code = 422
     message = "validation error"
+
+
+class UnauthorizedError(AppException):
+    status_code = 401
+    message = "unauthorized"

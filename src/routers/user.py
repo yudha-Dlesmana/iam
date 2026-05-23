@@ -12,9 +12,9 @@ async def list_user(
     service: UserServiceDep,
     limit: int = 10,
     offset: int = 0,
-    name_like: str | None = Query(default=None, min_length=1, max_length=50),
+    email_like: str | None = Query(default=None, min_length=1, max_length=50),
 ):
-    items, total = await service.get_all_paginated(limit, offset, name_like)
+    items, total = await service.get_all_paginated(limit, offset, email_like)
     return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
 
 
