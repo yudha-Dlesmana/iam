@@ -1,4 +1,5 @@
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Role
@@ -10,6 +11,10 @@ class RoleRepository:
 
     async def get_by_id(self, id: int) -> Role | None:
         return await self.session.get(Role, id)
+
+    async def get_by_id_with_permission(self, id: int) -> Role | None:
+        stmt = select(Role).where(Role.id == id).options(selectinload(Role.permissions))
+        return await self.session.scalar(stmt)
 
     async def get_by_name(self, name: str) -> Role | None:
         stmt = select(Role).where(Role.name == name)

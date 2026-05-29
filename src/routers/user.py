@@ -3,11 +3,8 @@ from fastapi import APIRouter, status, Query
 from src.schemas.common import PaginatedResponse
 from src.schemas.user import UserCreate, UserUpdate, UserResponse
 from src.lib.deps import UserServiceDep
-from src.lib.deps import require_role
 
-router = APIRouter(
-    prefix="/users", tags=["users"], dependencies=[require_role("super_admin")]
-)
+router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("", response_model=PaginatedResponse[UserResponse])

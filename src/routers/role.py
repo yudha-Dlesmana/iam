@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Query, status
 
-from src.schemas.role import RoleRequest, RoleResponse
+from src.schemas.role import (
+    RoleRequest,
+    RolePermissionsRequest,
+    RoleResponse,
+    RolePermissionsResponse,
+)
 from src.schemas.common import PaginatedResponse
 from src.lib.deps import RoleServiceDep
-from src.lib.deps import require_role
 
-router = APIRouter(
-    prefix="/roles", tags=["roles"], dependencies=[require_role("super_admin")]
-)
+router = APIRouter(prefix="/roles", tags=["roles"])
 
 
 @router.get("", response_model=PaginatedResponse[RoleResponse])
@@ -39,3 +41,10 @@ async def update_role(id: int, data: RoleRequest, service: RoleServiceDep):
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_role(id: int, service: RoleServiceDep):
     await service.delete(id)
+
+
+@router.get("/{id}/permissions", response_model=RolePermissionsResponse)
+async def get_role_permissions(
+    id: int, data: RolePermissionsRequest, service: RoleServiceDep
+):
+    return await service.set_permissions(id, data.permissions_ids)

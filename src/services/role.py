@@ -2,13 +2,15 @@ from sqlalchemy.exc import IntegrityError
 from src.models import Role
 from src.schemas.role import RoleRequest
 from src.repositories.role import RoleRepository
+from src.repositories.permission import PermissionRepository
 from src.exceptions.base import NotFoundError, ConflictError, ValidationError
 from src.lib.db_errors import is_check_violation, is_unique_violation
 
 
 class RoleService:
-    def __init__(self, repo: RoleRepository):
+    def __init__(self, repo: RoleRepository, permission_repo: PermissionRepository):
         self.repo = repo
+        self.permission_repo = permission_repo
 
     @staticmethod
     def _save_error(e: IntegrityError) -> Exception:
@@ -53,3 +55,17 @@ class RoleService:
             await self.repo.delete(role)
         except IntegrityError:
             raise ConflictError("role still referenced by users")
+
+    async def set_permissions(self, role_id: int, permission_ids: list[int]) -> Role:
+        role = await self.repo.get_by_id_with_permission(role_id)
+        if not role:
+            raise NotFoundError("role not found")
+
+        perms = await self.permission_repo.get_by_ids(permission_ids)
+        found_ids = {p.id for p in perms}
+        missing = set(permission_ids) - found_ids
+        if missing:
+            raise NotFoundError(f" permission not found: {sorted(missing)}")
+
+        role.permission = perms
+        return await self.repo.save(role)
