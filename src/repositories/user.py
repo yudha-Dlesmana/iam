@@ -3,6 +3,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import User
+from src.models import Role
 
 
 class UserRepository:
@@ -10,7 +11,11 @@ class UserRepository:
         self.session = session
 
     async def get_by_id(self, id: str) -> User | None:
-        stmt = select(User).where(User.id == id).options(selectinload(User.role))
+        stmt = (
+            select(User)
+            .where(User.id == id)
+            .options(selectinload(User.role).selectinload(Role.permissions))
+        )
         return await self.session.scalar(stmt)
 
     async def get_by_email(self, email: str) -> User | None:
