@@ -14,12 +14,16 @@ class UserRepository:
         stmt = (
             select(User)
             .where(User.id == id)
-            .options(selectinload(User.role).selectinload(Role.permission_name))
+            .options(selectinload(User.role).selectinload(Role.permissions))
         )
         return await self.session.scalar(stmt)
 
     async def get_by_email(self, email: str) -> User | None:
-        stmt = select(User).where(User.email == email).options(selectinload(User.role))
+        stmt = (
+            select(User)
+            .where(User.email == email)
+            .options(selectinload(User.role).selectinload(Role.permissions))
+        )
         return await self.session.scalar(stmt)
 
     async def get_all(
