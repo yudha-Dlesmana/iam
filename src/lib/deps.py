@@ -71,6 +71,16 @@ def require_role(*roles: str):
     return Depends(checker)
 
 
+def require_permission(*perms: str):
+    async def checker(claims: CurrentClaims) -> dict:
+        granted = set(claims.get("permissions", []))
+        if not granted.issuperset(perms):
+            raise ForbiddenError("insufficient permission")
+        return claims
+
+    return Depends(checker)
+
+
 HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 RoleServiceDep = Annotated[RoleService, Depends(get_role_service)]
