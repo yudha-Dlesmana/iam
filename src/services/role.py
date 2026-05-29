@@ -65,7 +65,14 @@ class RoleService:
         found_ids = {p.id for p in perms}
         missing = set(permission_ids) - found_ids
         if missing:
-            raise NotFoundError(f" permission not found: {sorted(missing)}")
+            raise NotFoundError(f"permission not found: {sorted(missing)}")
 
-        role.permission = perms
-        return await self.repo.save(role)
+        role.permissions = perms
+        await self.repo.save(role)
+        return await self.repo.get_by_id_with_permission(role_id)
+
+    async def get_with_permissions(self, id: int) -> Role:
+        role = await self.repo.get_by_id_with_permission(id)
+        if not role:
+            raise NotFoundError("role not found")
+        return role

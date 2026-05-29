@@ -44,7 +44,12 @@ async def delete_role(id: int, service: RoleServiceDep):
 
 
 @router.get("/{id}/permissions", response_model=RolePermissionsResponse)
-async def get_role_permissions(
+async def get_role_permissions(id: int, service: RoleServiceDep):
+    return await service.get_with_permissions(id)
+
+
+@router.put("/{id}/permissions", response_model=RolePermissionsResponse)
+async def set_role_permissions(
     id: int, data: RolePermissionsRequest, service: RoleServiceDep
 ):
     return await service.set_permissions(id, data.permissions_ids)

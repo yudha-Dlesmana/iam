@@ -33,7 +33,7 @@ def get_auth_service(session: DbSession, redis: RedisClient) -> AuthService:
 
 
 def get_role_service(session: DbSession) -> RoleService:
-    return RoleService(RoleRepository(session))
+    return RoleService(RoleRepository(session), PermissionRepository(session))
 
 
 def get_user_service(session: DbSession) -> UserService:
