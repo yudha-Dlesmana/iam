@@ -1,6 +1,7 @@
 import uuid
 import json
 from datetime import datetime, timedelta, timezone
+from typing import TypedDict
 
 import jwt
 from argon2 import PasswordHasher
@@ -32,20 +33,39 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class PayloadAccessToken(TypedDict):
+    jti: str
+    sub: str
+    iat: int
+    exp: int
+    email: str
+    role: str
+    permissions: list[str]
+
+
 def create_access_token(user: User) -> str:
-    payload = {
+    payload: PayloadAccessToken = {
         "jti": str(uuid.uuid4()),
         "sub": user.id,
         "iat": _now(),
         "exp": _now() + ACCESS_TTL,
         "email": user.email,
         "role": user.role_name,
+        "permissions": user.role.permission_name,
     }
     return jwt.encode(payload, settings.JWT_ACCESS_SECRET, algorithm=ALGORITHM)
 
 
-def decode_access_token(token: str) -> dict:
+def decode_access_token(token: str) -> PayloadAccessToken:
     return jwt.decode(token, settings.JWT_ACCESS_SECRET, algorithms=[ALGORITHM])
+
+
+class PayloadRefreshToken(TypedDict):
+    jti: str
+    sub: str
+    device: str
+    iat: int
+    exp: int
 
 
 def create_refresh_token(
@@ -53,7 +73,7 @@ def create_refresh_token(
 ) -> tuple[str, str, str]:
     jti = str(uuid.uuid4())
     device = device or str(uuid.uuid4())
-    payload = {
+    payload: PayloadRefreshToken = {
         "jti": jti,
         "sub": user_id,
         "device": device,
@@ -64,7 +84,7 @@ def create_refresh_token(
     return token, jti, device
 
 
-def decode_refresh_token(token: str) -> dict:
+def decode_refresh_token(token: str) -> PayloadRefreshToken:
     return jwt.decode(token, settings.JWT_REFRESH_SECRET, algorithms=[ALGORITHM])
 
 
