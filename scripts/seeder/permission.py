@@ -10,6 +10,7 @@ PERMISSIONS = [
     "user.delete",
     "role.read",
     "role.manage",
+    "permission.read",
 ]
 
 
