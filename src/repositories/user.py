@@ -14,7 +14,7 @@ class UserRepository:
         stmt = (
             select(User)
             .where(User.id == id)
-            .options(selectinload(User.role).selectinload(Role.permissions))
+            .options(selectinload(User.role).selectinload(Role.permission_name))
         )
         return await self.session.scalar(stmt)
 
