@@ -3,8 +3,11 @@ from fastapi import APIRouter, Query, status
 from src.schemas.role import RoleRequest, RoleResponse
 from src.schemas.common import PaginatedResponse
 from src.lib.deps import RoleServiceDep
+from src.lib.deps import require_role
 
-router = APIRouter(prefix="/roles", tags=["roles"])
+router = APIRouter(
+    prefix="/roles", tags=["roles"], dependencies=[require_role("super_admin")]
+)
 
 
 @router.get("", response_model=PaginatedResponse[RoleResponse])
