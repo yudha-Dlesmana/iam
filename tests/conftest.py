@@ -1,3 +1,4 @@
+from src.lib.deps import get_current_claims
 import pytest_asyncio
 import pytest
 from httpx import AsyncClient, ASGITransport
@@ -102,6 +103,35 @@ ROLES = "v1/roles"
 
 @pytest.fixture
 def role(client):
+    app.dependency_overrides[get_current_claims] = lambda: {
+        "sub": "1",
+        "role": "super_admin",
+    }
+
+    class Role:
+        async def post_role(self, role):
+            return await client.post(ROLES, json={"name": role})
+
+    return Role()
+
+
+@pytest.fixture
+def role_wrong(client):
+    app.dependency_overrides[get_current_claims] = lambda: {
+        "sub": "1",
+        "role": "user",
+    }
+
+    class Role:
+        async def post_role(self, role):
+            return await client.post(ROLES, json={"name": role})
+
+    return Role()
+
+
+@pytest.fixture
+def role_no_auth(client):
+
     class Role:
         async def post_role(self, role):
             return await client.post(ROLES, json={"name": role})
