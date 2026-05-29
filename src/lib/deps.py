@@ -11,10 +11,12 @@ from src.core.security import decode_access_token
 from src.repositories.health import HealthRepository
 from src.repositories.role import RoleRepository
 from src.repositories.user import UserRepository
+from src.repositories.permission import PermissionRepository
 from src.services.health import HealthService
 from src.services.auth import AuthService
 from src.services.role import RoleService
 from src.services.user import UserService
+from src.services.permission import PermissionService
 from src.exceptions.base import UnauthorizedError
 from src.exceptions.base import ForbiddenError
 
@@ -36,6 +38,10 @@ def get_role_service(session: DbSession) -> RoleService:
 
 def get_user_service(session: DbSession) -> UserService:
     return UserService(UserRepository(session))
+
+
+def get_permission_service(session: DbSession) -> PermissionService:
+    return PermissionService(PermissionRepository(session))
 
 
 _bearer = HTTPBearer(auto_error=False)
@@ -85,3 +91,4 @@ HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 RoleServiceDep = Annotated[RoleService, Depends(get_role_service)]
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+PermissionServiceDep = Annotated[PermissionService, Depends(get_permission_service)]
