@@ -26,3 +26,8 @@ class ValidationError(AppException):
 class UnauthorizedError(AppException):
     status_code = 401
     message = "unauthorized"
+
+
+class ForbiddenError(AppException):
+    status_code = 403
+    message = "forbidden"

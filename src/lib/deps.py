@@ -16,6 +16,7 @@ from src.services.auth import AuthService
 from src.services.role import RoleService
 from src.services.user import UserService
 from src.exceptions.base import UnauthorizedError
+from src.exceptions.base import ForbiddenError
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 RedisClient = Annotated[Redis, Depends(get_redis)]
@@ -40,20 +41,37 @@ def get_user_service(session: DbSession) -> UserService:
 _bearer = HTTPBearer(auto_error=False)
 
 
-async def get_current_user_id(
+async def get_current_claims(
     credential: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
-) -> str:
+) -> dict:
     if credential is None:
         raise UnauthorizedError("missing bearer token")
     try:
-        payload = decode_access_token(credential.credentials)
+        return decode_access_token(credential.credentials)
     except jwt.InvalidTokenError as e:
         raise UnauthorizedError("invalid access token") from e
-    return payload["sub"]
+
+
+CurrentClaims = Annotated[dict, Depends(get_current_claims)]
+
+
+async def get_current_user_id(claims: CurrentClaims) -> str:
+    return claims["sub"]
+
+
+CurrentUserId = Annotated[str, Depends(get_current_user_id)]
+
+
+def require_role(*roles: str):
+    async def checker(claims: CurrentClaims) -> dict:
+        if claims.get("role") not in roles:
+            raise ForbiddenError("insufficient role")
+        return claims
+
+    return Depends(checker)
 
 
 HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 RoleServiceDep = Annotated[RoleService, Depends(get_role_service)]
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
-CurrentUserId = Annotated[str, Depends(get_current_user_id)]
