@@ -7,6 +7,7 @@ from src.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from src.models.user import User
+    from src.models.permission import Permission
 
 
 class Role(Base, TimestampMixin):
@@ -24,3 +25,10 @@ class Role(Base, TimestampMixin):
         back_populates="role",
         passive_deletes="all",
     )
+    permissions: Mapped[list[Permission]] = relationship(
+        secondary="role_permissions", back_populates="roles"
+    )
+
+    @property
+    def permission_name(self) -> list[str]:
+        return [p.name for p in self.permissions]
