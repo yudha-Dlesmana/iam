@@ -15,4 +15,6 @@ class Service(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True)
 
-    permissions: Mapped[list[Permission]] = relationship(back_populates="service")
+    permissions: Mapped[list[Permission]] = relationship(
+        back_populates="service", passive_deletes=True
+    )

@@ -35,9 +35,5 @@ class PermissionService:
             raise
 
     async def delete(self, id: int) -> None:
-        service = await self.get(id)
-
-        try:
-            await self.repo.delete(service)
-        except IntegrityError:
-            raise ConflictError("role still referenced by users")
+        permission = await self.get(id)
+        await self.repo.delete(permission)
