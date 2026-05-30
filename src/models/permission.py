@@ -16,7 +16,7 @@ class Permission(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
     service_id: Mapped[int] = mapped_column(
-        ForeignKey("service.id", ondelete="CASCADE")
+        ForeignKey("services.id", ondelete="CASCADE")
     )
 
     roles: Mapped[list[Role]] = relationship(
