@@ -2,6 +2,7 @@ import asyncio
 
 from src.core.database import SessionLocal, engine
 from scripts.seeder.role import seed_role
+from scripts.seeder.service import seed_service
 from scripts.seeder.user import seed_user
 from scripts.seeder.permission import seed_permission
 from scripts.seeder.role_permission import seed_role_permission
@@ -10,6 +11,7 @@ from scripts.seeder.role_permission import seed_role_permission
 async def seed() -> None:
     async with SessionLocal() as session:
         await seed_role(session)
+        await seed_service(session)
         await seed_user(session)
         await seed_permission(session)
         await seed_role_permission(session)
