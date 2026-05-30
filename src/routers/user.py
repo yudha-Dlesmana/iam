@@ -11,7 +11,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get(
     "",
     response_model=PaginatedResponse[UserResponse],
-    dependencies=[require_permission("user.read")],
+    dependencies=[require_permission("iam.user.read")],
 )
 async def list_user(
     service: UserServiceDep,
@@ -27,14 +27,16 @@ async def list_user(
     "",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[require_permission("user.create")],
+    dependencies=[require_permission("iam.user.create")],
 )
 async def create_user(data: UserCreate, service: UserServiceDep):
     return await service.create(data)
 
 
 @router.get(
-    "/{id}", response_model=UserResponse, dependencies=[require_permission("user.read")]
+    "/{id}",
+    response_model=UserResponse,
+    dependencies=[require_permission("iam.user.read")],
 )
 async def get_user(id: str, service: UserServiceDep):
     return await service.get(id)
@@ -43,7 +45,7 @@ async def get_user(id: str, service: UserServiceDep):
 @router.patch(
     "/{id}",
     response_model=UserResponse,
-    dependencies=[require_permission("user.update")],
+    dependencies=[require_permission("iam.user.update")],
 )
 async def update_user(id: str, data: UserUpdate, service: UserServiceDep):
     return await service.update(id, data)
@@ -52,7 +54,7 @@ async def update_user(id: str, data: UserUpdate, service: UserServiceDep):
 @router.delete(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[require_permission("user.delete")],
+    dependencies=[require_permission("iam.user.delete")],
 )
 async def delete_user(id: str, service: UserServiceDep):
     await service.delete(id)
