@@ -1,4 +1,3 @@
-from src.lib.deps import get_current_claims
 import pytest_asyncio
 import pytest
 from httpx import AsyncClient, ASGITransport
