@@ -15,7 +15,7 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 @router.get(
     "",
     response_model=PaginatedResponse[RoleResponse],
-    dependencies=[require_permission("role.read")],
+    dependencies=[require_permission("iam.role.read")],
 )
 async def list_roles(
     service: RoleServiceDep,
@@ -31,7 +31,7 @@ async def list_roles(
     "",
     response_model=RoleResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[require_permission("role.manage")],
+    dependencies=[require_permission("iam.role.manage")],
 )
 async def create_role(data: RoleRequest, service: RoleServiceDep):
     return await service.create(data)
@@ -40,7 +40,7 @@ async def create_role(data: RoleRequest, service: RoleServiceDep):
 @router.get(
     "/{id}",
     response_model=RolePermissionsResponse,
-    dependencies=[require_permission("role.read")],
+    dependencies=[require_permission("iam.role.read")],
 )
 async def get_role(id: int, service: RoleServiceDep):
     return await service.get_with_permissions(id)
@@ -49,7 +49,7 @@ async def get_role(id: int, service: RoleServiceDep):
 @router.patch(
     "/{id}",
     response_model=RoleResponse,
-    dependencies=[require_permission("role.manage")],
+    dependencies=[require_permission("iam.role.manage")],
 )
 async def update_role(id: int, data: RoleRequest, service: RoleServiceDep):
     return await service.update(id, data)
@@ -58,7 +58,7 @@ async def update_role(id: int, data: RoleRequest, service: RoleServiceDep):
 @router.delete(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[require_permission("role.manage")],
+    dependencies=[require_permission("iam.role.manage")],
 )
 async def delete_role(id: int, service: RoleServiceDep):
     await service.delete(id)
@@ -67,7 +67,7 @@ async def delete_role(id: int, service: RoleServiceDep):
 @router.put(
     "/{id}/permissions",
     response_model=RolePermissionsResponse,
-    dependencies=[require_permission("role.manage")],
+    dependencies=[require_permission("iam.role.manage")],
 )
 async def set_role_permissions(
     id: int, data: RolePermissionsRequest, service: RoleServiceDep
