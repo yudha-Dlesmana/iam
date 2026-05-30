@@ -10,7 +10,7 @@ class RoleRequest(BaseModel):
 
 
 class RolePermissionsRequest(BaseModel):
-    permissions_ids: list[int]
+    permission_ids: list[int]
 
 
 class RoleResponse(BaseModel):
