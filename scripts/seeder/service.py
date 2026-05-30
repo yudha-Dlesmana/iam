@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Service
 
-SERVICE = ["iam", "more"]
+SERVICE = ["iam"]
 
 
 async def seed_service(session: AsyncSession) -> None:
