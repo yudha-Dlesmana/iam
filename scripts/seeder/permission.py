@@ -11,7 +11,10 @@ PERMISSIONS: dict[str, list[str]] = {
         "user.delete",
         "role.read",
         "role.manage",
+        "service.read",
+        "service.manage",
         "permission.read",
+        "permission.manage",
     ]
 }
 

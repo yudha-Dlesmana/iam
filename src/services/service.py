@@ -12,10 +12,10 @@ class ServiceService:
         self.repo = repo
 
     async def get(self, id: int) -> Service:
-        role = await self.repo.get_by_id(id)
-        if not role:
-            raise NotFoundError("role not found")
-        return role
+        service = await self.repo.get_by_id(id)
+        if not service:
+            raise NotFoundError("service not found")
+        return service
 
     async def get_all_paginated(
         self, limit: int = 10, offset: int = 0, name_like: str | None = None

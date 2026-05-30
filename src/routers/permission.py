@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, status
 
-from src.schemas.permission import PermissionResponse
+from src.schemas.permission import PermissionRequest, PermissionResponse
 from src.schemas.common import PaginatedResponse
 from src.lib.deps import PermissionServiceDep, require_permission
 
@@ -13,7 +13,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=PaginatedResponse[PermissionResponse],
-    dependencies=[require_permission("permission.read")],
+    dependencies=[require_permission("iam.permission.read")],
 )
 async def list_permissions(
     service: PermissionServiceDep,
@@ -23,3 +23,22 @@ async def list_permissions(
 ):
     items, total = await service.get_all_paginated(limit, offset, name_like)
     return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.post(
+    "",
+    response_model=PermissionResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_permission("iam.permission.manage")],
+)
+async def create_permission(data: PermissionRequest, service: PermissionServiceDep):
+    return await service.create(data)
+
+
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_permission("iam.permission.manage")],
+)
+async def delete_permission(id: int, service: PermissionServiceDep):
+    await service.delete(id)
