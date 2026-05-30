@@ -13,7 +13,8 @@ from src.models.user import User
 
 _ph = PasswordHasher()
 
-ALGORITHM = "HS256"
+ACCESS_ALGORITHM = "RS256"
+REFRESH_ALGORITHM = "HS256"
 ACCESS_TTL = timedelta(minutes=15)
 REFRESH_TTL = timedelta(days=7)
 
@@ -51,13 +52,13 @@ def create_access_token(user: User) -> str:
         "exp": _now() + ACCESS_TTL,
         "email": user.email,
         "role": user.role_name,
-        "permissions": user.role.permission_name,
+        "permissions": user.role.permission_name if user.role else [],
     }
-    return jwt.encode(payload, settings.JWT_ACCESS_SECRET, algorithm=ALGORITHM)
+    return jwt.encode(payload, settings.jwt_private_key, algorithm=ACCESS_ALGORITHM)
 
 
 def decode_access_token(token: str) -> PayloadAccessToken:
-    return jwt.decode(token, settings.JWT_ACCESS_SECRET, algorithms=[ALGORITHM])
+    return jwt.decode(token, settings.jwt_public_key, algorithms=[ACCESS_ALGORITHM])
 
 
 class PayloadRefreshToken(TypedDict):
@@ -80,12 +81,16 @@ def create_refresh_token(
         "iat": _now(),
         "exp": _now() + REFRESH_TTL,
     }
-    token = jwt.encode(payload, settings.JWT_REFRESH_SECRET, algorithm=ALGORITHM)
+    token = jwt.encode(
+        payload, settings.JWT_REFRESH_SECRET, algorithm=REFRESH_ALGORITHM
+    )
     return token, jti, device
 
 
 def decode_refresh_token(token: str) -> PayloadRefreshToken:
-    return jwt.decode(token, settings.JWT_REFRESH_SECRET, algorithms=[ALGORITHM])
+    return jwt.decode(
+        token, settings.JWT_REFRESH_SECRET, algorithms=[REFRESH_ALGORITHM]
+    )
 
 
 async def peek_session(r: Redis, user_id: str, device: str, jti: str) -> bool:
