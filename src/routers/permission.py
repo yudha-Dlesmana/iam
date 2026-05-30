@@ -2,17 +2,19 @@ from fastapi import APIRouter, Query
 
 from src.schemas.permission import PermissionResponse
 from src.schemas.common import PaginatedResponse
-from src.lib.deps import PermissionServiceDep
-from src.lib.deps import require_role
+from src.lib.deps import PermissionServiceDep, require_permission
 
 router = APIRouter(
     prefix="/permissions",
     tags=["permissions"],
-    dependencies=[require_role("super_admin")],
 )
 
 
-@router.get("", response_model=PaginatedResponse[PermissionResponse])
+@router.get(
+    "",
+    response_model=PaginatedResponse[PermissionResponse],
+    dependencies=[require_permission("permission.read")],
+)
 async def list_permissions(
     service: PermissionServiceDep,
     limit: int = 10,
