@@ -1,3 +1,50 @@
+import pytest
+from src.app import app
+from src.lib.deps import get_current_claims
+
+ROLES = "v1/roles"
+
+
+@pytest.fixture
+def role(client):
+    app.dependency_overrides[get_current_claims] = lambda: {
+        "sub": "1",
+        "role": "super_admin",
+        "permissions": ["role.read", "role.manage"],
+    }
+
+    class Role:
+        async def post_role(self, role):
+            return await client.post(ROLES, json={"name": role})
+
+    return Role()
+
+
+@pytest.fixture
+def role_wrong(client):
+    app.dependency_overrides[get_current_claims] = lambda: {
+        "sub": "1",
+        "role": "user",
+        "permissions": ["role.read"],
+    }
+
+    class Role:
+        async def post_role(self, role):
+            return await client.post(ROLES, json={"name": role})
+
+    return Role()
+
+
+@pytest.fixture
+def role_no_auth(client):
+
+    class Role:
+        async def post_role(self, role):
+            return await client.post(ROLES, json={"name": role})
+
+    return Role()
+
+
 async def test_create_role(role):
     assert (await role.post_role("admin")).status_code == 201
 
