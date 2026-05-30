@@ -12,4 +12,4 @@ class ServiceResponse(BaseModel):
     id: int
     name: str
     created_at: datetime
-    updated_ad: datetime
+    updated_at: datetime
