@@ -1,3 +1,7 @@
+# keypair
+jwt_private.pem
+jwt_public.pem
+
 # pytho bytecode & cache
 __pycache__/
 *.pyc
