@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload
 
 from src.models import Role, Permission
 
-GRANTS: dict[str, list[str]] = {"super_admin": ["*"], "user": ["user.read"]}
+GRANTS: dict[str, list[str]] = {"super_admin": ["*"], "user": ["iam.user.read"]}
 
 
 async def seed_role_permission(session: AsyncSession) -> None:

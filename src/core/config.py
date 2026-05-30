@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     REDIS_URL: str
 
-    JWT_PRIVATE_KET_PATH: str = "jwt_private.pem"
+    JWT_PRIVATE_KEY_PATH: str = "jwt_private.pem"
     JWT_PUBLIC_KEY_PATH: str = "jwt_public.pem"
     JWT_REFRESH_SECRET: str
 
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     @property
     def jwt_private_key(self) -> str:
-        with open(self.JWT_PRIVATE_KET_PATH) as f:
+        with open(self.JWT_PRIVATE_KEY_PATH) as f:
             return f.read()
 
     @property

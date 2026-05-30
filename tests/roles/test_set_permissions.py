@@ -18,7 +18,15 @@ async def editor_role(db):
 
 @pytest_asyncio.fixture
 async def two_perms(db):
-    items = [Permission(name="user.read"), Permission(name="user.create")]
+    from src.models import Service
+
+    svc = Service(name="iam")
+    db.add(svc)
+    await db.flush()
+    items = [
+        Permission(name="iam.user.read", service_id=svc.id),
+        Permission(name="iam.user.create", service_id=svc.id),
+    ]
     db.add_all(items)
     await db.commit()
     return items
@@ -48,7 +56,7 @@ async def test_set_permissions_ok(client, can_manage, editor_role, two_perms):
 
     assert res.status_code == 200
     names = {p["name"] for p in res.json()["permissions"]}
-    assert names == {"user.read", "user.create"}
+    assert names == {"iam.user.read", "iam.user.create"}
 
 
 async def test_set_permissions_forbidden(client, read_only, editor_role, two_perms):
