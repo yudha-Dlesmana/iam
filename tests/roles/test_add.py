@@ -7,7 +7,7 @@ async def test_create_duplicate_role_conflict(role):
     assert (await role.post_role("admin")).status_code == 409
 
 
-async def test_create_role_wrong_role_forbidden(role_wrong):
+async def test_create_role_missing_permission_forbidden(role_wrong):
     assert (await role_wrong.post_role("admin")).status_code == 403
 
 

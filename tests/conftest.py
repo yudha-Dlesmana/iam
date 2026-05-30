@@ -106,6 +106,7 @@ def role(client):
     app.dependency_overrides[get_current_claims] = lambda: {
         "sub": "1",
         "role": "super_admin",
+        "permissions": ["role.read", "role.manage"],
     }
 
     class Role:
@@ -120,6 +121,7 @@ def role_wrong(client):
     app.dependency_overrides[get_current_claims] = lambda: {
         "sub": "1",
         "role": "user",
+        "permissions": ["role.read"],
     }
 
     class Role:
