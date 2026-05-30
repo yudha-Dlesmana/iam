@@ -55,15 +55,6 @@ async def update_role(id: int, data: RoleRequest, service: RoleServiceDep):
     return await service.update(id, data)
 
 
-@router.delete(
-    "/{id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[require_permission("iam.role.manage")],
-)
-async def delete_role(id: int, service: RoleServiceDep):
-    await service.delete(id)
-
-
 @router.put(
     "/{id}/permissions",
     response_model=RolePermissionsResponse,
@@ -73,3 +64,12 @@ async def set_role_permissions(
     id: int, data: RolePermissionsRequest, service: RoleServiceDep
 ):
     return await service.set_permissions(id, data.permissions_ids)
+
+
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_permission("iam.role.manage")],
+)
+async def delete_role(id: int, service: RoleServiceDep):
+    await service.delete(id)
