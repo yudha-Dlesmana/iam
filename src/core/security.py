@@ -73,7 +73,13 @@ def create_access_token(user: User) -> str:
 
 
 def decode_access_token(token: str) -> PayloadAccessToken:
-    return jwt.decode(token, settings.jwt_public_key, algorithms=[ACCESS_ALGORITHM])
+    return jwt.decode(
+        token,
+        settings.jwt_public_key,
+        algorithms=[ACCESS_ALGORITHM],
+        issuer=settings.JWT_ISSUER,
+        audience=settings.JWT_ISSUER,
+    )
 
 
 class PayloadRefreshToken(TypedDict):
