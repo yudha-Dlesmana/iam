@@ -37,7 +37,7 @@ def can_manage(client):
     app.dependency_overrides[get_current_claims] = lambda: {
         "sub": "1",
         "role": "super_admin",
-        "permissions": ["role.read", "role.manage"],
+        "permissions": ["iam.role.read", "iam.role.manage"],
     }
 
 
@@ -46,13 +46,13 @@ def read_only(client):
     app.dependency_overrides[get_current_claims] = lambda: {
         "sub": "1",
         "role": "viewer",
-        "permissions": ["role.read"],
+        "permissions": ["iam.role.read"],
     }
 
 
 async def test_set_permissions_ok(client, can_manage, editor_role, two_perms):
     ids = [p.id for p in two_perms]
-    res = await client.put(URL.format(id=editor_role.id), json={"permissions_ids": ids})
+    res = await client.put(URL.format(id=editor_role.id), json={"permission_ids": ids})
 
     assert res.status_code == 200
     names = {p["name"] for p in res.json()["permissions"]}
@@ -61,14 +61,14 @@ async def test_set_permissions_ok(client, can_manage, editor_role, two_perms):
 
 async def test_set_permissions_forbidden(client, read_only, editor_role, two_perms):
     ids = [p.id for p in two_perms]
-    res = await client.put(URL.format(id=editor_role.id), json={"permissions_ids": ids})
+    res = await client.put(URL.format(id=editor_role.id), json={"permission_ids": ids})
 
     assert res.status_code == 403
 
 
 async def test_set_permissions_unknown_id(client, can_manage, editor_role):
     res = await client.put(
-        URL.format(id=editor_role.id), json={"permissions_ids": [999]}
+        URL.format(id=editor_role.id), json={"permission_ids": [999]}
     )
 
     assert res.status_code == 404

@@ -63,7 +63,7 @@ async def update_role(id: int, data: RoleRequest, service: RoleServiceDep):
 async def set_role_permissions(
     id: int, data: RolePermissionsRequest, service: RoleServiceDep
 ):
-    return await service.set_permissions(id, data.permissions_ids)
+    return await service.set_permissions(id, data.permission_ids)
 
 
 @router.delete(
