@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     JWT_PRIVATE_KEY_PATH: str = "jwt_private.pem"
     JWT_PUBLIC_KEY_PATH: str = "jwt_public.pem"
+    JWT_ISSUER: str = "iam"
     JWT_REFRESH_SECRET: str
 
     @property

@@ -34,9 +34,17 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _audience_from(user: User) -> list[str]:
+    perms = user.role.permission_name if user.role else []
+    service = {p.split(".", 1)[0] for p in perms}
+    return sorted(service) or [settings.JWT_ISSUER]
+
+
 class PayloadAccessToken(TypedDict):
     jti: str
     sub: str
+    iss: str
+    aud: list[str]
     iat: int
     exp: int
     email: str
@@ -48,13 +56,20 @@ def create_access_token(user: User) -> str:
     payload: PayloadAccessToken = {
         "jti": str(uuid.uuid4()),
         "sub": user.id,
+        "iss": settings.JWT_ISSUER,
+        "aud": _audience_from(user),
         "iat": _now(),
         "exp": _now() + ACCESS_TTL,
         "email": user.email,
         "role": user.role_name,
         "permissions": user.role.permission_name if user.role else [],
     }
-    return jwt.encode(payload, settings.jwt_private_key, algorithm=ACCESS_ALGORITHM)
+    return jwt.encode(
+        payload,
+        settings.jwt_private_key,
+        algorithm=ACCESS_ALGORITHM,
+        headers={"kid": "iam-key-1"},
+    )
 
 
 def decode_access_token(token: str) -> PayloadAccessToken:
