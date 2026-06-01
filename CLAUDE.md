@@ -68,6 +68,8 @@ keys/<kid>/     RSA keypairs (gitignored). kid = directory name.
 
 `User ──role_id──> Role ──role_permissions──> Permission ──service_id──> Service`. Permission names are namespaced `service.resource.action` (e.g. `iam.user.read`). Guards: `require_permission("iam.role.manage")` as a `dependencies=[...]` entry on routes. `claims["permissions"]` must be a superset of required.
 
+Roles can opt into single-session mode via `Role.single_session` (bool column, default false; super_admin seeded as true). When set, `AuthService.login` calls `revoke_user` before issuing a new refresh session — newest-login-wins. Caveat: only the refresh session is dropped; the old device's existing access token stays valid until its 15-min expiry.
+
 ### Error handling contract
 
 Services raise subclasses of `AppException` (`NotFoundError` 404, `ConflictError` 409, `ValidationError` 422, `UnauthorizedError` 401, `ForbiddenError` 403). Don't `raise HTTPException` in services. `register_exception_handlers` in `src/exceptions/handlers.py` maps them to `{"message": ...}` JSON. `RequestValidationError` is reformatted into `{"message": "validation error", "errors": ["field: msg", ...]}`. Translate DB errors via `lib/db_errors.is_unique_violation` / `is_fk_violation` / `is_check_violation(e, name)` — these handle both MySQL error codes and class-name strings.

@@ -18,6 +18,7 @@ class RoleResponse(BaseModel):
 
     id: int
     name: str
+    single_session: bool
     created_at: datetime
     updated_at: datetime
 
@@ -27,4 +28,5 @@ class RolePermissionsResponse(BaseModel):
 
     id: int
     name: str
+    single_session: bool
     permissions: list["PermissionResponse"]

@@ -67,6 +67,10 @@ class AuthService:
 
         await rl_reset(self.redis, f"login:email:{email.lower()}")
 
+        if user.role and user.role.single_session:
+            await revoke_user(self.redis, user.id)
+            log.info("single-session enforced: revoked prior sessions user=%s", user.id)
+
         access_token = create_access_token(user)
         refresh_token, jti, device = create_refresh_token(user.id)
         await store_session(self.redis, user.id, device, jti, ip, ua)

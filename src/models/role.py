@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from sqlalchemy import String, CheckConstraint
+from sqlalchemy import Boolean, String, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin
@@ -20,6 +20,9 @@ class Role(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True)
+    single_session: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="0"
+    )
 
     users: Mapped[list[User]] = relationship(
         back_populates="role",
