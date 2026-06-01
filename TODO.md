@@ -2,33 +2,6 @@
 
 Deferred work for the IAM microservice. Tracked here so it isn't lost.
 
-## Features
-
-### Single-session for super_admin (hybrid)
-Not implemented. Current design is intentionally **multi-device**: sessions are
-stored per device in the Redis hash `sessions:{user_id}` (see `core/security.py`),
-and `/auth/sessions` lists all active devices. One account can be logged in on
-many devices at once.
-
-Goal: **super_admin = single active session** (anti account-sharing on the most
-privileged account); **all other roles stay multi-device** (convenient for CMS use).
-
-Plan:
-- In `AuthService.login`, before `store_session`, if the user's role requires
-  single session, call `revoke_user(redis, user.id)` to drop existing sessions
-  (newest-login-wins policy — avoids lockout).
-- Decide how to flag it:
-  - hardcode `if user.role_name == "super_admin"` (simplest, fragile if renamed), or
-  - add a `Role.single_session: bool` column (flexible, needs a migration).
-- Caveat: `revoke_user` only clears the refresh session in Redis. The old access
-  token (RS256, 15 min) stays valid until it expires — the old device loses the
-  ability to refresh but keeps access for up to 15 min. Instant kill needs access
-  token revocation (see Security gaps).
-- Note on "per service": sessions are tracked per *user*, not per user+service.
-  The same access token works across every service in its `aud`. If single-session
-  must be scoped per service, the session key would need the service/audience
-  (e.g. `sessions:{user_id}:{service}`) and tokens issued per service.
-
 ## Hardening (before production)
 
 ### Audit log
