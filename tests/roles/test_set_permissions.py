@@ -72,3 +72,43 @@ async def test_set_permissions_unknown_id(client, can_manage, editor_role):
     )
 
     assert res.status_code == 404
+
+
+async def test_add_permissions_keeps_existing(
+    client, can_manage, editor_role, two_perms, db
+):
+    # set 1 permission dulu
+    p1, p2 = two_perms
+    await client.put(URL.format(id=editor_role.id), json={"permission_ids": [p1.id]})
+    # POST add p2 -> harus punya dua-duanya (bukan replace)
+    res = await client.post(
+        URL.format(id=editor_role.id), json={"permission_ids": [p2.id]}
+    )
+    assert res.status_code == 200
+    names = {p["name"] for p in res.json()["permissions"]}
+    assert names == {"iam.user.read", "iam.user.create"}
+
+
+async def test_add_permissions_idempotent(client, can_manage, editor_role, two_perms):
+    p1, _ = two_perms
+    await client.post(URL.format(id=editor_role.id), json={"permission_ids": [p1.id]})
+
+    res = await client.post(
+        URL.format(id=editor_role.id), json={"permission_ids": [p1.id]}
+    )
+    assert res.status_code == 200
+    ids = [p["id"] for p in res.json()["permissions"]]
+    assert ids.count(p1.id) == 1
+
+
+async def test_remove_permission_ok(client, can_manage, editor_role, two_perms):
+    p1, p2 = two_perms
+    await client.put(
+        URL.format(id=editor_role.id),
+        json={"permission_ids": [p1.id, p2.id]},
+    )
+
+    res = await client.delete(f"{URL.format(id=editor_role.id)}/{p1.id}")
+    assert res.status_code == 200
+    names = {p["name"] for p in res.json()["permissions"]}
+    assert names == {"iam.user.create"}

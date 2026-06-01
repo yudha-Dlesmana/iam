@@ -70,3 +70,19 @@ async def test_list_permissions_ok(client, can_manage, a_service, db):
     res = await client.get(URL)
     assert res.status_code == 200
     assert res.json()["total"] == 1
+
+
+async def test_create_permission_wrong_prefix(client, can_manage, a_service):
+    res = await client.post(
+        URL, json={"name": "billing.x.read", "service_id": a_service.id}
+    )
+    assert res.status_code == 422
+
+
+async def test_create_permission_prefix_substring_rejected(
+    client, can_manage, a_service
+):
+    res = await client.post(
+        URL, json={"name": "iamfoo.read", "service_id": a_service.id}
+    )
+    assert res.status_code == 422
