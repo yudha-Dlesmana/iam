@@ -65,5 +65,5 @@ This is infra work, not code. Keep `.env` and `keys/` out of git (already gitign
 
 ## Code quality / cleanup
 
-- `keys.py` uses `lru_cache` — key rotation needs an app restart to pick up new keys (fine for scheduled rotation; note it).
+_All current items delivered. See git history for prior cleanup work._
 

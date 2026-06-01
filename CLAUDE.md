@@ -62,7 +62,7 @@ keys/<kid>/     RSA keypairs (gitignored). kid = directory name.
 - Access claims include `sub`, `iss`, `aud` (derived from the user's permission service prefixes — `_audience_from`), `role`, `permissions`.
 - Refresh rotation uses an atomic Redis Lua script (`_ROTATE_LUA`): returns `OK` / `MISSING` / `REUSE`. On `REUSE` `AuthService.refresh` revokes the entire user's sessions (reuse-detection).
 - Sessions stored as Redis hash `sessions:{user_id}` with `device` field; TTL = refresh TTL. One device = one entry. `logout` deletes one device, `all-logout` deletes the whole hash.
-- `src/core/keys.py` loads all kids under `JWT_KEYS_DIR` once (lru_cache). Rotation = add a new dir, switch `JWT_ACTIVE_KID`; old kids stay verifiable. JWKS endpoint (`src/routers/jwks.py`) exposes every public key by kid.
+- `src/core/keys.py` loads all kids under `JWT_KEYS_DIR` once (lru_cache). Rotation = add a new dir, switch `JWT_ACTIVE_KID`; old kids stay verifiable. JWKS endpoint (`src/routers/jwks.py`) exposes every public key by kid. New kids on disk are NOT picked up until the app restarts or `keys.reload()` is called — production rotation is intended to be a scheduled deploy, so this is by design.
 
 ### RBAC
 

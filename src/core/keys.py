@@ -3,6 +3,12 @@ from functools import lru_cache
 
 from src.core.config import settings
 
+# Keyset is read once at first access and cached for the process lifetime.
+# Adding a new kid on disk (e.g. via scripts/gen_keys.sh) is NOT picked up
+# automatically — call reload() or restart the app. Production rotation is
+# expected to be scheduled (deploy new key, restart, then flip JWT_ACTIVE_KID
+# on the next deploy), so the restart cost is acceptable.
+
 
 @lru_cache
 def _load() -> tuple[dict[str, str], dict[str, str]]:
@@ -37,3 +43,11 @@ def public_key_for(kid: str) -> str:
 def all_public_keys() -> dict[str, str]:
     _, public = _load()
     return public
+
+
+def reload() -> None:
+    """Invalidate the keyset cache so the next access re-reads from disk.
+
+    Use after writing a new kid directory at runtime (operational tool / test).
+    """
+    _load.cache_clear()
