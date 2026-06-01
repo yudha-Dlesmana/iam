@@ -53,7 +53,6 @@ This is infra work, not code. Keep `.env` and `keys/` out of git (already gitign
 
 - **Access token revocation** — RS256 access tokens can't be revoked until they expire (15 min). A banned user keeps access until then. If instant revocation is needed, blacklist `jti` in Redis and check it on each request (trades off the "no callback to IAM" property).
 - **Pagination cap** — list endpoints take `limit` with no upper bound; a caller can request a huge page. Cap at e.g. 100.
-- **Security headers / CORS** — add HSTS, X-Frame-Options, etc. via middleware; tighten CORS origins for production.
 
 ## OAuth (planned — to implement)
 
