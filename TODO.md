@@ -13,7 +13,7 @@ This is infra work, not code. Keep `.env` and `keys/` out of git (already gitign
 
 ## Security gaps (review before production)
 
-- **Access token revocation** — RS256 access tokens can't be revoked until they expire (15 min). A banned user keeps access until then. If instant revocation is needed, blacklist `jti` in Redis and check it on each request (trades off the "no callback to IAM" property).
+_All current items delivered. See git history for prior security work._
 
 ## OAuth (planned — to implement)
 

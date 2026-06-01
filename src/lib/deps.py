@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.audit_context import actor_id_var
 from src.core.database import get_db
 from src.core.redis import get_redis
+from src.core.revocation import is_token_revoked
 from src.core.security import decode_access_token
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.health import HealthRepository
@@ -41,8 +42,8 @@ def get_role_service(session: DbSession) -> RoleService:
     return RoleService(RoleRepository(session), PermissionRepository(session))
 
 
-def get_user_service(session: DbSession) -> UserService:
-    return UserService(UserRepository(session))
+def get_user_service(session: DbSession, redis: RedisClient) -> UserService:
+    return UserService(UserRepository(session), redis)
 
 
 def get_permission_service(session: DbSession) -> PermissionService:
@@ -62,6 +63,7 @@ _bearer = HTTPBearer(auto_error=False)
 
 async def get_current_claims(
     credential: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+    redis: RedisClient,
 ) -> dict:
     if credential is None:
         raise UnauthorizedError("missing bearer token")
@@ -69,6 +71,8 @@ async def get_current_claims(
         claims = decode_access_token(credential.credentials)
     except jwt.InvalidTokenError as e:
         raise UnauthorizedError("invalid access token") from e
+    if await is_token_revoked(redis, claims["sub"], claims["iat"]):
+        raise UnauthorizedError("token revoked")
     actor_id_var.set(claims.get("sub"))
     return claims
 

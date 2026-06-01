@@ -1,7 +1,10 @@
+from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
+
 from src.models import User
 from src.schemas.user import UserCreate, UserUpdate
-from src.core.security import hash_password
+from src.core.revocation import mark_revoked
+from src.core.security import hash_password, revoke_user as revoke_sessions
 from src.repositories.user import UserRepository
 from src.exceptions.base import NotFoundError, ConflictError
 from src.lib.audit import record as audit
@@ -9,8 +12,9 @@ from src.lib.db_errors import is_unique_violation, is_fk_violation
 
 
 class UserService:
-    def __init__(self, repo: UserRepository):
+    def __init__(self, repo: UserRepository, redis: Redis):
         self.repo = repo
+        self.redis = redis
 
     @staticmethod
     def _save_error(e: IntegrityError) -> Exception:
@@ -74,4 +78,13 @@ class UserService:
 
     async def delete(self, id: str) -> None:
         user = await self.get(id)
+        await mark_revoked(self.redis, user.id)
+        await revoke_sessions(self.redis, user.id)
         await self.repo.delete(user)
+        await audit(self.repo.session, "user.delete", "user", id, {"email": user.email})
+
+    async def revoke_tokens(self, id: str) -> None:
+        user = await self.get(id)
+        await mark_revoked(self.redis, user.id)
+        await revoke_sessions(self.redis, user.id)
+        await audit(self.repo.session, "user.revoke_tokens", "user", user.id)
