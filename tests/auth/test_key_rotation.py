@@ -58,11 +58,11 @@ def two_kids(monkeypatch, tmp_path):
         (d / "private.pem").write_text(priv)
         (d / "public.pem").write_text(pub)
 
-    keys_module._load.cache_clear()
+    keys_module.reload()
     monkeypatch.setattr(settings, "JWT_KEYS_DIR", str(tmp_path))
     monkeypatch.setattr(settings, "JWT_ACTIVE_KID", "iam-key-1")
     yield
-    keys_module._load.cache_clear()
+    keys_module.reload()
 
 
 def test_all_kids_loaded(two_kids):
