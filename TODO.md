@@ -51,7 +51,6 @@ This is infra work, not code. Keep `.env` and `keys/` out of git (already gitign
 
 ## Security gaps (review before production)
 
-- **Login rate limiting / lockout** — `/auth/login` has no throttle; brute force is unrestricted. Add a Redis counter per email/IP, block temporarily after N failures. Highest priority for an IAM.
 - **Access token revocation** — RS256 access tokens can't be revoked until they expire (15 min). A banned user keeps access until then. If instant revocation is needed, blacklist `jti` in Redis and check it on each request (trades off the "no callback to IAM" property).
 - **Pagination cap** — list endpoints take `limit` with no upper bound; a caller can request a huge page. Cap at e.g. 100.
 - **Health endpoint detail leak** — `/v1/health` returns `str(e)` (DB/redis error detail) to the public. Mask in production.
