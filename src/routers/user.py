@@ -4,6 +4,7 @@ from src.schemas.common import PaginatedResponse
 from src.schemas.user import UserCreate, UserUpdate, UserResponse
 from src.lib.deps import UserServiceDep
 from src.lib.deps import require_permission
+from src.lib.pagination import MAX_PAGE_LIMIT
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -15,8 +16,8 @@ router = APIRouter(prefix="/users", tags=["users"])
 )
 async def list_user(
     service: UserServiceDep,
-    limit: int = 10,
-    offset: int = 0,
+    limit: int = Query(default=10, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(default=0, ge=0),
     email_like: str | None = Query(default=None, min_length=1, max_length=50),
 ):
     items, total = await service.get_all_paginated(limit, offset, email_like)
