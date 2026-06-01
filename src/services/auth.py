@@ -16,6 +16,9 @@ from src.core.security import (
     revoke_user,
     list_sessions,
 )
+from src.core.logging import get_logger
+
+log = get_logger(__name__)
 
 
 class AuthService:
@@ -27,13 +30,16 @@ class AuthService:
         user = await self.repo.get_by_email(email)
 
         if not user or not user.password:
+            log.warning("login failed: unknown email=%s", email)
             raise UnauthorizedError("invalid credentials")
         if not verify_password(user.password, plain=password):
+            log.warning("login failed: wrong password user=%s", user.id)
             raise UnauthorizedError("invalid credentials")
 
         access_token = create_access_token(user)
         refresh_token, jti, device = create_refresh_token(user.id)
         await store_session(self.redis, user.id, device, jti, ip, ua)
+        log.info("login success user=%s", user.id)
         return TokenPair(access_token=access_token, refresh_token=refresh_token)
 
     async def refresh(self, token: str, ip: str) -> TokenPair:
@@ -53,6 +59,7 @@ class AuthService:
             raise UnauthorizedError("session expired")
         if status == "REUSE":
             await revoke_user(self.redis, user_id)
+            log.warning("refresh REUSE detected user=%s, all sessions revoked", user_id)
             raise UnauthorizedError("token reused")
 
         user = await self.repo.get_by_id(user_id)
