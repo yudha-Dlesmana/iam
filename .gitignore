@@ -1,6 +1,5 @@
 # keypair
-jwt_private.pem
-jwt_public.pem
+keys/
 
 # pytho bytecode & cache
 __pycache__/

@@ -8,6 +8,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from redis.asyncio import Redis
 
+from src.core.keys import active_private_key, public_key_for
 from src.core.config import settings
 from src.models.user import User
 
@@ -64,18 +65,27 @@ def create_access_token(user: User) -> str:
         "role": user.role_name,
         "permissions": user.role.permission_name if user.role else [],
     }
+    private_key, kid = active_private_key()
     return jwt.encode(
         payload,
-        settings.jwt_private_key,
+        private_key,
         algorithm=ACCESS_ALGORITHM,
-        headers={"kid": "iam-key-1"},
+        headers={"kid": kid},
     )
 
 
 def decode_access_token(token: str) -> PayloadAccessToken:
+    header = jwt.get_unverified_header(token)
+    kid = header.get("kid")
+    if not kid:
+        raise jwt.InvalidTokenError("missing kid")
+    try:
+        public_key = public_key_for(kid)
+    except KeyError as e:
+        raise jwt.InvalidTokenError("unknown kid") from e
     return jwt.decode(
         token,
-        settings.jwt_public_key,
+        public_key,
         algorithms=[ACCESS_ALGORITHM],
         issuer=settings.JWT_ISSUER,
         audience=settings.JWT_ISSUER,

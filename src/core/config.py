@@ -15,8 +15,8 @@ class Settings(BaseSettings):
 
     REDIS_URL: str
 
-    JWT_PRIVATE_KEY_PATH: str = "jwt_private.pem"
-    JWT_PUBLIC_KEY_PATH: str = "jwt_public.pem"
+    JWT_KEYS_DIR: str = "keys"
+    JWT_ACTIVE_KID: str = "iam-key-1"
     JWT_ISSUER: str = "iam"
     JWT_REFRESH_SECRET: str
 
@@ -27,16 +27,6 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENV != "development"
-
-    @property
-    def jwt_private_key(self) -> str:
-        with open(self.JWT_PRIVATE_KEY_PATH) as f:
-            return f.read()
-
-    @property
-    def jwt_public_key(self) -> str:
-        with open(self.JWT_PUBLIC_KEY_PATH) as f:
-            return f.read()
 
 
 settings = Settings()
