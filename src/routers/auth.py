@@ -103,15 +103,5 @@ async def sessions(uid: CurrentUserId, service: AuthServiceDep):
 
 
 @router.get("/current-user", response_model=UserResponse)
-async def currect_user(uid: CurrentUserId, service: UserServiceDep):
+async def current_user(uid: CurrentUserId, service: UserServiceDep):
     return await service.get(uid)
-
-
-@router.get("/validate", include_in_schema=False)
-async def validate(
-    service: AuthServiceDep,
-    refresh_token: Annotated[str | None, Cookie(include_in_schema=False)] = None,
-):
-    if not refresh_token or not await service.validate(refresh_token):
-        raise UnauthorizedError("invalid session")
-    return {"valid": True}

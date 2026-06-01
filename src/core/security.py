@@ -1,7 +1,7 @@
 import uuid
 import json
 from datetime import datetime, timedelta, timezone
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import jwt
 from argon2 import PasswordHasher
@@ -83,13 +83,14 @@ def decode_access_token(token: str) -> PayloadAccessToken:
         public_key = public_key_for(kid)
     except KeyError as e:
         raise jwt.InvalidTokenError("unknown kid") from e
-    return jwt.decode(
+    payload = jwt.decode(
         token,
         public_key,
         algorithms=[ACCESS_ALGORITHM],
         issuer=settings.JWT_ISSUER,
         audience=settings.JWT_ISSUER,
     )
+    return cast(PayloadAccessToken, payload)
 
 
 class PayloadRefreshToken(TypedDict):
@@ -122,13 +123,6 @@ def decode_refresh_token(token: str) -> PayloadRefreshToken:
     return jwt.decode(
         token, settings.JWT_REFRESH_SECRET, algorithms=[REFRESH_ALGORITHM]
     )
-
-
-async def peek_session(r: Redis, user_id: str, device: str, jti: str) -> bool:
-    cur = await r.hget(f"sessions:{user_id}", device)
-    if cur is None:
-        return False
-    return json.loads(cur)["jti"] == jti
 
 
 async def store_session(
