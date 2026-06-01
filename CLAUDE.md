@@ -70,6 +70,10 @@ keys/<kid>/     RSA keypairs (gitignored). kid = directory name.
 
 Roles can opt into single-session mode via `Role.single_session` (bool column, default false; super_admin seeded as true). When set, `AuthService.login` calls `revoke_user` before issuing a new refresh session — newest-login-wins. Caveat: only the refresh session is dropped; the old device's existing access token stays valid until its 15-min expiry.
 
+### Audit log
+
+Sensitive mutations (role/service/permission CRUD, role-permission grants, user role changes) write an `AuditLog` row in the same DB transaction. `actor_id` + `ip` are carried via `contextvars` (`src/core/audit_context.py`) — `get_current_claims` sets the actor, `AuditContextMiddleware` sets the IP. Services call `src/lib/audit.record(session, action, target_type, target_id, meta)` after a successful mutation; the row participates in the request's transaction, so failed mutations leave no audit trace. `GET /v1/audit-logs` (guarded by `iam.audit.read`) lists rows newest-first, filterable by action / target_type / actor_id.
+
 ### Error handling contract
 
 Services raise subclasses of `AppException` (`NotFoundError` 404, `ConflictError` 409, `ValidationError` 422, `UnauthorizedError` 401, `ForbiddenError` 403). Don't `raise HTTPException` in services. `register_exception_handlers` in `src/exceptions/handlers.py` maps them to `{"message": ...}` JSON. `RequestValidationError` is reformatted into `{"message": "validation error", "errors": ["field: msg", ...]}`. Translate DB errors via `lib/db_errors.is_unique_violation` / `is_fk_violation` / `is_check_violation(e, name)` — these handle both MySQL error codes and class-name strings.

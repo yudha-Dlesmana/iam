@@ -5,6 +5,7 @@ from src.models.permission import Permission
 from src.models.service import Service
 from src.models.role_permission import role_permissions
 from src.models.oauth_account import OauthAccount
+from src.models.audit_log import AuditLog
 
 __all__ = [
     "Base",
@@ -14,4 +15,5 @@ __all__ = [
     "Service",
     "role_permissions",
     "OauthAccount",
+    "AuditLog",
 ]

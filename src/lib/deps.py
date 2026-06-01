@@ -5,14 +5,17 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.audit_context import actor_id_var
 from src.core.database import get_db
 from src.core.redis import get_redis
 from src.core.security import decode_access_token
+from src.repositories.audit_log import AuditLogRepository
 from src.repositories.health import HealthRepository
 from src.repositories.role import RoleRepository
 from src.repositories.user import UserRepository
 from src.repositories.permission import PermissionRepository
 from src.repositories.service import ServiceRepository
+from src.services.audit_log import AuditLogService
 from src.services.health import HealthService
 from src.services.auth import AuthService
 from src.services.role import RoleService
@@ -50,6 +53,10 @@ def get_service_service(session: DbSession) -> ServiceService:
     return ServiceService(ServiceRepository(session))
 
 
+def get_audit_log_service(session: DbSession) -> AuditLogService:
+    return AuditLogService(AuditLogRepository(session))
+
+
 _bearer = HTTPBearer(auto_error=False)
 
 
@@ -59,9 +66,11 @@ async def get_current_claims(
     if credential is None:
         raise UnauthorizedError("missing bearer token")
     try:
-        return decode_access_token(credential.credentials)
+        claims = decode_access_token(credential.credentials)
     except jwt.InvalidTokenError as e:
         raise UnauthorizedError("invalid access token") from e
+    actor_id_var.set(claims.get("sub"))
+    return claims
 
 
 CurrentClaims = Annotated[dict, Depends(get_current_claims)]
@@ -99,3 +108,4 @@ RoleServiceDep = Annotated[RoleService, Depends(get_role_service)]
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 PermissionServiceDep = Annotated[PermissionService, Depends(get_permission_service)]
 ServiceServiceDep = Annotated[ServiceService, Depends(get_service_service)]
+AuditLogServiceDep = Annotated[AuditLogService, Depends(get_audit_log_service)]

@@ -4,6 +4,7 @@ from src.exceptions.base import ConflictError, NotFoundError, ValidationError
 from src.models import Permission
 from src.repositories.permission import PermissionRepository
 from src.repositories.service import ServiceRepository
+from src.lib.audit import record as audit
 from src.lib.db_errors import is_unique_violation, is_fk_violation
 
 
@@ -34,14 +35,24 @@ class PermissionService:
 
         permission = Permission(name=data.name, service_id=data.service_id)
         try:
-            return await self.repo.save(permission)
+            permission = await self.repo.save(permission)
         except IntegrityError as e:
             if is_unique_violation(e):
                 raise ConflictError("permission already exists") from e
             if is_fk_violation(e):
                 raise ValidationError("service not found") from e
             raise
+        await audit(
+            self.repo.session,
+            "permission.create",
+            "permission",
+            permission.id,
+            {"name": permission.name, "service_id": permission.service_id},
+        )
+        return permission
 
     async def delete(self, id: int) -> None:
         permission = await self.get(id)
+        snapshot = {"name": permission.name, "service_id": permission.service_id}
         await self.repo.delete(permission)
+        await audit(self.repo.session, "permission.delete", "permission", id, snapshot)

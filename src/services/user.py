@@ -4,6 +4,7 @@ from src.schemas.user import UserCreate, UserUpdate
 from src.core.security import hash_password
 from src.repositories.user import UserRepository
 from src.exceptions.base import NotFoundError, ConflictError
+from src.lib.audit import record as audit
 from src.lib.db_errors import is_unique_violation, is_fk_violation
 
 
@@ -45,6 +46,10 @@ class UserService:
 
     async def update(self, id: str, data: UserUpdate) -> User:
         user = await self.get(id)
+        old_role_id = user.role_id
+        role_changed = (
+            "role_id" in data.model_fields_set and data.role_id != old_role_id
+        )
         if data.email:
             user.email = data.email
         if data.password:
@@ -53,9 +58,19 @@ class UserService:
             user.role_id = data.role_id
 
         try:
-            return await self.repo.save(user)
+            user = await self.repo.save(user)
         except IntegrityError as e:
             raise self._save_error(e) from e
+
+        if role_changed:
+            await audit(
+                self.repo.session,
+                "user.role_changed",
+                "user",
+                user.id,
+                {"old_role_id": old_role_id, "new_role_id": user.role_id},
+            )
+        return user
 
     async def delete(self, id: str) -> None:
         user = await self.get(id)
