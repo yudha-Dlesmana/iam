@@ -4,17 +4,6 @@ Deferred work for the IAM microservice. Tracked here so it isn't lost.
 
 ## Hardening (before production)
 
-### Audit log
-Deferred — only one super_admin for now, so attribution is unambiguous.
-Implement when there are multiple admins or before going to production.
-
-Design:
-- Table `audit_logs`: `actor_id`, `action`, `target_type`, `target_id`, `meta` (JSON, **not** `metadata` — reserved by SQLAlchemy), `ip`, `created_at`.
-- Carry `actor_id` + `ip` via `contextvars` (set `actor_id` in `get_current_claims`, set `ip` in middleware) so service signatures stay clean.
-- Record only sensitive mutations: role create/update/delete, role set/add/remove permission, service create/delete, permission create/delete, user role change.
-- Persist to DB (permanent evidence) **and** mirror to the app logger.
-- Optional `GET /v1/audit-logs` guarded by `iam.audit.read`.
-
 ### Secrets management
 Deferred — `.env` + gitignored `keys/` is acceptable for development.
 Move to a secret manager (Vault / AWS Secrets Manager / etc.) before production:

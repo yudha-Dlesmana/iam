@@ -4,6 +4,7 @@ from src.schemas.role import RoleRequest
 from src.repositories.role import RoleRepository
 from src.repositories.permission import PermissionRepository
 from src.exceptions.base import NotFoundError, ConflictError, ValidationError
+from src.lib.audit import record as audit
 from src.lib.db_errors import is_check_violation, is_unique_violation
 
 
@@ -41,26 +42,39 @@ class RoleService:
 
     async def create(self, data: RoleRequest) -> Role:
         try:
-            return await self.repo.save(Role(name=data.name))
+            role = await self.repo.save(Role(name=data.name))
         except IntegrityError as e:
             raise self._save_error(e) from e
+        await audit(self.repo.session, "role.create", "role", role.id, {"name": role.name})
+        return role
 
     async def update(self, id: int, data: RoleRequest) -> Role:
         role = await self.get(id)
+        old_name = role.name
         role.name = data.name
 
         try:
-            return await self.repo.save(role)
+            role = await self.repo.save(role)
         except IntegrityError as e:
             raise self._save_error(e) from e
+        await audit(
+            self.repo.session,
+            "role.update",
+            "role",
+            role.id,
+            {"old_name": old_name, "new_name": role.name},
+        )
+        return role
 
     async def delete(self, id: int) -> None:
         role = await self.get(id)
+        snapshot = {"name": role.name}
 
         try:
             await self.repo.delete(role)
         except IntegrityError:
             raise ConflictError("role still referenced by users")
+        await audit(self.repo.session, "role.delete", "role", id, snapshot)
 
     async def set_permissions(self, role_id: int, permission_ids: list[int]) -> Role:
         role = await self.repo.get_by_id_with_permission(role_id)
@@ -75,6 +89,13 @@ class RoleService:
 
         role.permissions = perms
         await self.repo.save(role)
+        await audit(
+            self.repo.session,
+            "role.set_permissions",
+            "role",
+            role_id,
+            {"permission_ids": sorted(permission_ids)},
+        )
         return await self.repo.get_by_id_with_permission(role_id)
 
     async def add_permissions(self, role_id: int, permission_ids: list[int]) -> Role:
@@ -93,6 +114,13 @@ class RoleService:
                 role.permissions.append(p)
 
         await self.repo.save(role)
+        await audit(
+            self.repo.session,
+            "role.add_permissions",
+            "role",
+            role_id,
+            {"permission_ids": sorted(permission_ids)},
+        )
         return await self.repo.get_by_id_with_permission(role_id)
 
     async def remove_permission(self, role_id: int, permission_id: int) -> Role:
@@ -102,4 +130,11 @@ class RoleService:
 
         role.permissions = [p for p in role.permissions if p.id != permission_id]
         await self.repo.save(role)
+        await audit(
+            self.repo.session,
+            "role.remove_permission",
+            "role",
+            role_id,
+            {"permission_id": permission_id},
+        )
         return await self.repo.get_by_id_with_permission(role_id)

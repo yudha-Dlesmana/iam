@@ -4,6 +4,7 @@ from src.models import Service
 from src.schemas.service import ServiceRequest
 from src.repositories.service import ServiceRepository
 from src.exceptions.base import ConflictError, NotFoundError
+from src.lib.audit import record as audit
 from src.lib.db_errors import is_unique_violation
 
 
@@ -26,12 +27,22 @@ class ServiceService:
 
     async def create(self, data: ServiceRequest) -> Service:
         try:
-            return await self.repo.save(Service(name=data.name))
+            service = await self.repo.save(Service(name=data.name))
         except IntegrityError as e:
             if is_unique_violation(e):
                 raise ConflictError("service already exists") from e
             raise
+        await audit(
+            self.repo.session,
+            "service.create",
+            "service",
+            service.id,
+            {"name": service.name},
+        )
+        return service
 
     async def delete(self, id: int) -> None:
         service = await self.get(id)
+        snapshot = {"name": service.name}
         await self.repo.delete(service)
+        await audit(self.repo.session, "service.delete", "service", id, snapshot)
