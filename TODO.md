@@ -65,6 +65,5 @@ This is infra work, not code. Keep `.env` and `keys/` out of git (already gitign
 
 ## Code quality / cleanup
 
-- **Test coverage gaps**: `aud` derivation (`_audience_from`), `decode_access_token` rejecting bad `iss`/`aud`, user CRUD, JWKS endpoint, key rotation, consumer-side verify.
 - `keys.py` uses `lru_cache` — key rotation needs an app restart to pick up new keys (fine for scheduled rotation; note it).
 
