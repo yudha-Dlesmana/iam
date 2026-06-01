@@ -59,3 +59,12 @@ async def update_user(id: str, data: UserUpdate, service: UserServiceDep):
 )
 async def delete_user(id: str, service: UserServiceDep):
     await service.delete(id)
+
+
+@router.post(
+    "/{id}/revoke-tokens",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_permission("iam.user.update")],
+)
+async def revoke_user_tokens(id: str, service: UserServiceDep):
+    await service.revoke_tokens(id)
