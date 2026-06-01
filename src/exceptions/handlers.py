@@ -2,7 +2,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from src.core.loggin import get_logger
+from src.core.logging import get_logger
 from src.exceptions.base import AppException
 
 

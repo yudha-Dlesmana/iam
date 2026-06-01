@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from src.core.database import engine
 from src.core.cors import register_cors
-from src.core.loggin import setup_logging
+from src.core.logging import setup_logging
 from src.exceptions.handlers import register_exception_handlers
 from src.routers.api import router as api_router
 from src.routers.jwks import router as jwks_router
