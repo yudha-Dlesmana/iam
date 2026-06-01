@@ -8,6 +8,7 @@ from src.schemas.role import (
 )
 from src.schemas.common import PaginatedResponse
 from src.lib.deps import RoleServiceDep, require_permission
+from src.lib.pagination import MAX_PAGE_LIMIT
 
 router = APIRouter(prefix="/roles", tags=["roles"])
 
@@ -19,8 +20,8 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 )
 async def list_roles(
     service: RoleServiceDep,
-    limit: int = 10,
-    offset: int = 0,
+    limit: int = Query(default=10, ge=1, le=MAX_PAGE_LIMIT),
+    offset: int = Query(default=0, ge=0),
     name_like: str | None = Query(default=None, min_length=1, max_length=50),
 ):
     items, total = await service.get_all_paginated(limit, offset, name_like)
