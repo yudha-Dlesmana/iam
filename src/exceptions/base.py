@@ -31,3 +31,12 @@ class UnauthorizedError(AppException):
 class ForbiddenError(AppException):
     status_code = 403
     message = "forbidden"
+
+
+class TooManyRequestsError(AppException):
+    status_code = 429
+    message = "too many requests"
+
+    def __init__(self, message: str | None = None, retry_after: int | None = None):
+        super().__init__(message)
+        self.retry_after = retry_after
