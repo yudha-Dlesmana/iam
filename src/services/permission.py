@@ -3,12 +3,14 @@ from src.schemas.permission import PermissionRequest
 from src.exceptions.base import ConflictError, NotFoundError, ValidationError
 from src.models import Permission
 from src.repositories.permission import PermissionRepository
+from src.repositories.service import ServiceRepository
 from src.lib.db_errors import is_unique_violation, is_fk_violation
 
 
 class PermissionService:
-    def __init__(self, repo: PermissionRepository):
+    def __init__(self, repo: PermissionRepository, service_repo: ServiceRepository):
         self.repo = repo
+        self.service_repo = service_repo
 
     async def get(self, id: int) -> Permission:
         permission = await self.repo.get_by_id(id)
@@ -24,6 +26,12 @@ class PermissionService:
         return items, total
 
     async def create(self, data: PermissionRequest) -> Permission:
+        service = await self.service_repo.get_by_id(data.service_id)
+        if not service:
+            raise ValidationError("service not found")
+        if not data.name.startswith(f"{service.name}."):
+            raise ValidationError(f"permission name must start with '{service.name}.'")
+
         permission = Permission(name=data.name, service_id=data.service_id)
         try:
             return await self.repo.save(permission)

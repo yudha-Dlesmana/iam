@@ -43,7 +43,7 @@ def get_user_service(session: DbSession) -> UserService:
 
 
 def get_permission_service(session: DbSession) -> PermissionService:
-    return PermissionService(PermissionRepository(session))
+    return PermissionService(PermissionRepository(session), ServiceRepository(session))
 
 
 def get_service_service(session: DbSession) -> ServiceService:

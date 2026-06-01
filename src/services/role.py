@@ -10,7 +10,7 @@ from src.lib.db_errors import is_check_violation, is_unique_violation
 class RoleService:
     def __init__(self, repo: RoleRepository, permission_repo: PermissionRepository):
         self.repo = repo
-        self.permission_repo = permission_repo
+        self.perm_repo = permission_repo
 
     @staticmethod
     def _save_error(e: IntegrityError) -> Exception:
@@ -22,6 +22,12 @@ class RoleService:
 
     async def get(self, id: int) -> Role:
         role = await self.repo.get_by_id(id)
+        if not role:
+            raise NotFoundError("role not found")
+        return role
+
+    async def get_with_permissions(self, id: int) -> Role:
+        role = await self.repo.get_by_id_with_permission(id)
         if not role:
             raise NotFoundError("role not found")
         return role
@@ -61,7 +67,7 @@ class RoleService:
         if not role:
             raise NotFoundError("role not found")
 
-        perms = await self.permission_repo.get_by_ids(permission_ids)
+        perms = await self.perm_repo.get_by_ids(permission_ids)
         found_ids = {p.id for p in perms}
         missing = set(permission_ids) - found_ids
         if missing:
@@ -71,8 +77,29 @@ class RoleService:
         await self.repo.save(role)
         return await self.repo.get_by_id_with_permission(role_id)
 
-    async def get_with_permissions(self, id: int) -> Role:
-        role = await self.repo.get_by_id_with_permission(id)
+    async def add_permissions(self, role_id: int, permission_ids: list[int]) -> Role:
+        role = await self.repo.get_by_id_with_permission(role_id)
         if not role:
             raise NotFoundError("role not found")
-        return role
+
+        perms = await self.perm_repo.get_by_ids(permission_ids)
+        found = {p.id for p in perms}
+        missing = set(permission_ids) - found
+        if missing:
+            raise NotFoundError(f"permission not found: {sorted(missing)}")
+        existing = {p.id for p in role.permissions}
+        for p in perms:
+            if p.id not in existing:
+                role.permissions.append(p)
+
+        await self.repo.save(role)
+        return await self.repo.get_by_id_with_permission(role_id)
+
+    async def remove_permission(self, role_id: int, permission_id: int) -> Role:
+        role = await self.repo.get_by_id_with_permission(role_id)
+        if not role:
+            raise NotFoundError("role not found")
+
+        role.permissions = [p for p in role.permissions if p.id != permission_id]
+        await self.repo.save(role)
+        return await self.repo.get_by_id_with_permission(role_id)
