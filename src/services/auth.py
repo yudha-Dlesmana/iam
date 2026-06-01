@@ -3,7 +3,8 @@ from redis.asyncio import Redis
 
 from src.schemas.auth import TokenPair
 from src.repositories.user import UserRepository
-from src.exceptions.base import UnauthorizedError
+from src.exceptions.base import UnauthorizedError, TooManyRequestsError
+from src.core.rate_limit import hit as rl_hit, reset as rl_reset
 from src.core.security import (
     verify_password,
     create_access_token,
@@ -19,13 +20,42 @@ from src.core.logging import get_logger
 
 log = get_logger(__name__)
 
+LOGIN_EMAIL_LIMIT = 5
+LOGIN_IP_LIMIT = 20
+LOGIN_WINDOW_SECONDS = 15 * 60
+
 
 class AuthService:
     def __init__(self, repo: UserRepository, redis: Redis):
         self.repo = repo
         self.redis = redis
 
+    async def _enforce_login_limit(self, email: str, ip: str) -> None:
+        email_key = f"login:email:{email.lower()}"
+        ip_key = f"login:ip:{ip}" if ip else None
+
+        ok_email, retry_email = await rl_hit(
+            self.redis, email_key, LOGIN_EMAIL_LIMIT, LOGIN_WINDOW_SECONDS
+        )
+        if not ok_email:
+            log.warning("login rate limited email=%s", email)
+            raise TooManyRequestsError(
+                "too many login attempts", retry_after=retry_email
+            )
+
+        if ip_key:
+            ok_ip, retry_ip = await rl_hit(
+                self.redis, ip_key, LOGIN_IP_LIMIT, LOGIN_WINDOW_SECONDS
+            )
+            if not ok_ip:
+                log.warning("login rate limited ip=%s", ip)
+                raise TooManyRequestsError(
+                    "too many login attempts", retry_after=retry_ip
+                )
+
     async def login(self, email: str, password: str, ip: str, ua: str) -> TokenPair:
+        await self._enforce_login_limit(email, ip)
+
         user = await self.repo.get_by_email(email)
 
         if not user or not user.password:
@@ -34,6 +64,8 @@ class AuthService:
         if not verify_password(user.password, plain=password):
             log.warning("login failed: wrong password user=%s", user.id)
             raise UnauthorizedError("invalid credentials")
+
+        await rl_reset(self.redis, f"login:email:{email.lower()}")
 
         access_token = create_access_token(user)
         refresh_token, jti, device = create_refresh_token(user.id)

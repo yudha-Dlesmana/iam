@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from src.core.logging import get_logger
-from src.exceptions.base import AppException
+from src.exceptions.base import AppException, TooManyRequestsError
 
 
 log = get_logger(__name__)
@@ -11,9 +11,13 @@ log = get_logger(__name__)
 
 async def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppException)
+    headers = {}
+    if isinstance(exc, TooManyRequestsError) and exc.retry_after is not None:
+        headers["Retry-After"] = str(exc.retry_after)
     return JSONResponse(
         status_code=exc.status_code,
         content={"message": exc.message},
+        headers=headers or None,
     )
 
 
