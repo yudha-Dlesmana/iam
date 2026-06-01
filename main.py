@@ -3,8 +3,10 @@ from src.core.config import settings
 
 if __name__ == "__main__":
     uvicorn.run(
-        "src.app:app", 
+        "src.app:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.ENV == "development"
+        reload=settings.ENV == "development",
+        proxy_headers=settings.is_production,
+        forwarded_allow_ips=settings.FORWARDED_ALLOW_IPS or None,
     )

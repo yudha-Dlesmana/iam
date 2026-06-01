@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     FRONTEND_URLs: str = "http://localhost:9000"
     COOKIE_DOMAIN: str = ""
+    FORWARDED_ALLOW_IPS: str = ""
 
     DB_URL: str
     TEST_DB_URL: str
