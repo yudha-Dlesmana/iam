@@ -52,7 +52,9 @@ def read_only(client):
 
 async def test_set_permissions_ok(client, can_manage, editor_role, two_perms):
     ids = [p.id for p in two_perms]
-    res = await client.put(URL.format(id=editor_role.id), json={"permission_ids": ids})
+    res = await client.patch(
+        URL.format(id=editor_role.id), json={"permission_ids": ids}
+    )
 
     assert res.status_code == 200
     names = {p["name"] for p in res.json()["permissions"]}
@@ -61,13 +63,15 @@ async def test_set_permissions_ok(client, can_manage, editor_role, two_perms):
 
 async def test_set_permissions_forbidden(client, read_only, editor_role, two_perms):
     ids = [p.id for p in two_perms]
-    res = await client.put(URL.format(id=editor_role.id), json={"permission_ids": ids})
+    res = await client.patch(
+        URL.format(id=editor_role.id), json={"permission_ids": ids}
+    )
 
     assert res.status_code == 403
 
 
 async def test_set_permissions_unknown_id(client, can_manage, editor_role):
-    res = await client.put(
+    res = await client.patch(
         URL.format(id=editor_role.id), json={"permission_ids": [999]}
     )
 
@@ -79,10 +83,12 @@ async def test_add_permissions_keeps_existing(
 ):
     # set 1 permission dulu
     p1, p2 = two_perms
-    await client.put(URL.format(id=editor_role.id), json={"permission_ids": [p1.id]})
-    # POST add p2 -> harus punya dua-duanya (bukan replace)
-    res = await client.post(
-        URL.format(id=editor_role.id), json={"permission_ids": [p2.id]}
+    await client.patch(URL.format(id=editor_role.id), json={"permission_ids": [p1.id]})
+    # PATCH ?mode=add p2 -> harus punya dua-duanya (bukan replace)
+    res = await client.patch(
+        URL.format(id=editor_role.id),
+        params={"mode": "add"},
+        json={"permission_ids": [p2.id]},
     )
     assert res.status_code == 200
     names = {p["name"] for p in res.json()["permissions"]}
@@ -91,10 +97,16 @@ async def test_add_permissions_keeps_existing(
 
 async def test_add_permissions_idempotent(client, can_manage, editor_role, two_perms):
     p1, _ = two_perms
-    await client.post(URL.format(id=editor_role.id), json={"permission_ids": [p1.id]})
+    await client.patch(
+        URL.format(id=editor_role.id),
+        params={"mode": "add"},
+        json={"permission_ids": [p1.id]},
+    )
 
-    res = await client.post(
-        URL.format(id=editor_role.id), json={"permission_ids": [p1.id]}
+    res = await client.patch(
+        URL.format(id=editor_role.id),
+        params={"mode": "add"},
+        json={"permission_ids": [p1.id]},
     )
     assert res.status_code == 200
     ids = [p["id"] for p in res.json()["permissions"]]
@@ -103,7 +115,7 @@ async def test_add_permissions_idempotent(client, can_manage, editor_role, two_p
 
 async def test_remove_permission_ok(client, can_manage, editor_role, two_perms):
     p1, p2 = two_perms
-    await client.put(
+    await client.patch(
         URL.format(id=editor_role.id),
         json={"permission_ids": [p1.id, p2.id]},
     )

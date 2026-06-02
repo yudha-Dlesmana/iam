@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Query, status
 
 from src.schemas.role import (
@@ -65,25 +67,19 @@ async def delete_role(id: int, service: RoleServiceDep):
     await service.delete(id)
 
 
-@router.put(
+@router.patch(
     "/{id}/permissions",
     response_model=RolePermissionsResponse,
     dependencies=[require_permission("iam.role.manage")],
 )
-async def set_role_permissions(
-    id: int, data: RolePermissionsRequest, service: RoleServiceDep
+async def patch_role_permissions(
+    id: int,
+    data: RolePermissionsRequest,
+    service: RoleServiceDep,
+    mode: Literal["set", "add"] = Query(default="set"),
 ):
-    return await service.set_permissions(id, data.permission_ids)
-
-
-@router.post(
-    "/{id}/permissions",
-    response_model=RolePermissionsResponse,
-    dependencies=[require_permission("iam.role.manage")],
-)
-async def add_role_permissions(
-    id: int, data: RolePermissionsRequest, service: RoleServiceDep
-):
+    if mode == "set":
+        return await service.set_permissions(id, data.permission_ids)
     return await service.add_permissions(id, data.permission_ids)
 
 
