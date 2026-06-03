@@ -159,25 +159,14 @@ routes require specific permissions.
 
 ## How services consume IAM tokens
 
-A downstream service verifies tokens locally using IAM's public key — it never
-holds a private key:
+A downstream service verifies tokens locally using IAM's public key (JWKS) — it
+never holds a private key. It checks `iss`, `aud` (its own service name), `exp`,
+and that `permissions` covers the route, then guards routes with the permission it
+owns, e.g. `require_permission("billing.invoice.read")`.
 
-```python
-import jwt
-from jwt import PyJWKClient
-
-_jwks = PyJWKClient("http://iam-host/.well-known/jwks.json", cache_keys=True)
-
-def verify_token(token: str) -> dict:
-    key = _jwks.get_signing_key_from_jwt(token)        # picks key by kid
-    return jwt.decode(
-        token, key.key, algorithms=["RS256"],
-        issuer="iam", audience="billing",              # this service's name
-    )
-```
-
-Then guard routes with the hardcoded permission it owns, e.g.
-`require_permission("billing.invoice.read")`.
+See **[INTEGRATION.md](INTEGRATION.md)** for the full guide: frontend login/refresh
+flow, a complete service-side verifier, registering a new service, and running apps
+on different domains.
 
 ## Testing
 
