@@ -27,6 +27,25 @@ Before any deploy — the current `.env` values were exposed during this develop
 - `GOOGLE_CLIENT_SECRET` (re-issue in Google Cloud Console)
 - RSA keypair (`bash scripts/gen_keys.sh iam-key-prod-1`)
 
+### 4. FE auth gate for production cross-domain (frontend / architecture)
+The Next.js middleware currently gates routes by reading the IAM-issued
+`refresh_token` cookie. This only works in dev because FE (`localhost:9000`) and
+IAM (`localhost:9001`) share the host `localhost` (cookies ignore port). In
+production with **different domains** (e.g. `app.com` FE, `iam.com` API) the
+host-only IAM cookie is never sent to the FE origin, so the middleware always
+sees "no cookie" and bounces every user to `/login`. `COOKIE_PATH` is unrelated —
+the blocker is the **domain**, not the path. Pick one before launch:
+- **Shared parent domain** — serve FE + IAM under `*.company.com` and set
+  `COOKIE_DOMAIN=.company.com` so the cookie reaches the FE middleware. Simplest.
+- **FE-owned gate** — middleware checks the access token (FE state) or a separate
+  non-httpOnly login flag, instead of the IAM refresh cookie.
+- **`/me` check** — middleware calls an IAM session endpoint rather than reading
+  the cookie directly.
+
+Also revisit CSRF for prod: with `SameSite=None`, `/refresh` is CSRF-triggerable;
+impact is limited (new tokens return in the body, unreadable cross-origin) but
+consider a CSRF token if tightening. See [INTEGRATION.md](INTEGRATION.md) Part 3.
+
 ## Known limitations (defer until real ops pain)
 
 - No request-ID middleware → cross-service log correlation is manual.

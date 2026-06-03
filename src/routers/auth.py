@@ -12,7 +12,7 @@ from src.schemas.user import UserResponse
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 REFRESH_COOKIE = "refresh_token"
-COOKIE_PATH = "/v1/auth"
+COOKIE_PATH = "/"
 _SAMESITE = "none" if settings.is_production else "lax"
 
 
