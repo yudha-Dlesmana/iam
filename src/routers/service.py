@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Query, status
 
-from src.schemas.service import ServiceRequest, ServiceResponse
+from src.schemas.service import (
+    ServiceRequest,
+    ServiceResponse,
+    ServicePermissionsResponse,
+)
 from src.schemas.common import PaginatedResponse
 from src.lib.deps import ServiceServiceDep, require_permission
 from src.lib.pagination import MAX_PAGE_LIMIT
@@ -21,6 +25,15 @@ async def list_services(
 ):
     items, total = await service.get_all_paginated(limit, offset, name_like)
     return PaginatedResponse(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.get(
+    "/{id}",
+    response_model=ServicePermissionsResponse,
+    dependencies=[require_permission("iam.service.read")],
+)
+async def get_service(id: int, service: ServiceServiceDep):
+    return await service.get_with_permissions(id)
 
 
 @router.post(

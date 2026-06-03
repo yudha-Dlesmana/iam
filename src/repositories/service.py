@@ -1,5 +1,6 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.models import Service
 
@@ -10,6 +11,14 @@ class ServiceRepository:
 
     async def get_by_id(self, id: int) -> Service:
         return await self.session.get(Service, id)
+
+    async def get_by_id_with_permissions(self, id: int) -> Service | None:
+        stmt = (
+            select(Service)
+            .where(Service.id == id)
+            .options(selectinload(Service.permissions))
+        )
+        return await self.session.scalar(stmt)
 
     async def get_all(
         self, limit: int = 10, offset: int = 0, name_like: str | None = None

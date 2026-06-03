@@ -18,6 +18,12 @@ class ServiceService:
             raise NotFoundError("service not found")
         return service
 
+    async def get_with_permissions(self, id: int) -> Service:
+        service = await self.repo.get_by_id_with_permissions(id)
+        if not service:
+            raise NotFoundError("service not found")
+        return service
+
     async def get_all_paginated(
         self, limit: int = 10, offset: int = 0, name_like: str | None = None
     ) -> tuple[list[Service], int]:

@@ -56,6 +56,44 @@ async def test_list_services_ok(client, can_manage, a_service):
     assert res.json()["total"] == 1
 
 
+async def test_get_service_with_permissions_ok(client, can_manage, a_service, db):
+    db.add_all(
+        [
+            Permission(name="billing.invoice.read", service_id=a_service.id),
+            Permission(name="billing.invoice.create", service_id=a_service.id),
+        ]
+    )
+    await db.commit()
+
+    res = await client.get(f"{URL}/{a_service.id}")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["name"] == "billing"
+    names = {p["name"] for p in body["permissions"]}
+    assert names == {"billing.invoice.read", "billing.invoice.create"}
+
+
+async def test_get_service_empty_permissions(client, can_manage, a_service):
+    res = await client.get(f"{URL}/{a_service.id}")
+    assert res.status_code == 200
+    assert res.json()["permissions"] == []
+
+
+async def test_get_service_not_found(client, can_manage):
+    res = await client.get(f"{URL}/999")
+    assert res.status_code == 404
+
+
+async def test_get_service_forbidden(client, a_service):
+    app.dependency_overrides[get_current_claims] = lambda: {
+        "sub": "1",
+        "role": "nobody",
+        "permissions": [],
+    }
+    res = await client.get(f"{URL}/{a_service.id}")
+    assert res.status_code == 403
+
+
 async def test_delete_service_cascades_permissions(client, can_manage, a_service, db):
     # tambah permission ke service
     db.add(Permission(name="billing.invoice.read", service_id=a_service.id))
