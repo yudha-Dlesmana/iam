@@ -50,7 +50,7 @@ def read_only(client):
     }
 
 
-async def test_set_permissions_ok(client, can_manage, editor_role, two_perms):
+async def test_add_permissions_ok(client, can_manage, editor_role, two_perms):
     ids = [p.id for p in two_perms]
     res = await client.patch(
         URL.format(id=editor_role.id), json={"permission_ids": ids}
@@ -61,7 +61,7 @@ async def test_set_permissions_ok(client, can_manage, editor_role, two_perms):
     assert names == {"iam.user.read", "iam.user.create"}
 
 
-async def test_set_permissions_forbidden(client, read_only, editor_role, two_perms):
+async def test_add_permissions_forbidden(client, read_only, editor_role, two_perms):
     ids = [p.id for p in two_perms]
     res = await client.patch(
         URL.format(id=editor_role.id), json={"permission_ids": ids}
@@ -70,7 +70,7 @@ async def test_set_permissions_forbidden(client, read_only, editor_role, two_per
     assert res.status_code == 403
 
 
-async def test_set_permissions_unknown_id(client, can_manage, editor_role):
+async def test_add_permissions_unknown_id(client, can_manage, editor_role):
     res = await client.patch(
         URL.format(id=editor_role.id), json={"permission_ids": [999]}
     )
@@ -84,10 +84,9 @@ async def test_add_permissions_keeps_existing(
     # set 1 permission dulu
     p1, p2 = two_perms
     await client.patch(URL.format(id=editor_role.id), json={"permission_ids": [p1.id]})
-    # PATCH ?mode=add p2 -> harus punya dua-duanya (bukan replace)
+    # PATCH p2 -> harus punya dua-duanya (bukan replace)
     res = await client.patch(
         URL.format(id=editor_role.id),
-        params={"mode": "add"},
         json={"permission_ids": [p2.id]},
     )
     assert res.status_code == 200
@@ -99,13 +98,11 @@ async def test_add_permissions_idempotent(client, can_manage, editor_role, two_p
     p1, _ = two_perms
     await client.patch(
         URL.format(id=editor_role.id),
-        params={"mode": "add"},
         json={"permission_ids": [p1.id]},
     )
 
     res = await client.patch(
         URL.format(id=editor_role.id),
-        params={"mode": "add"},
         json={"permission_ids": [p1.id]},
     )
     assert res.status_code == 200

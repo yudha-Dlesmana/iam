@@ -76,10 +76,10 @@ async def patch_role_permissions(
     id: int,
     data: RolePermissionsRequest,
     service: RoleServiceDep,
-    mode: Literal["set", "add"] = Query(default="set"),
+    mode: Literal["add"] = Query(default="add"),
 ):
-    if mode == "set":
-        return await service.set_permissions(id, data.permission_ids)
+    # Only "add" is accepted; other modes rejected (422). Removal via
+    # DELETE /{id}/permissions/{permission_id}.
     return await service.add_permissions(id, data.permission_ids)
 
 

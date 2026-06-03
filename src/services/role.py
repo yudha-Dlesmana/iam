@@ -76,28 +76,6 @@ class RoleService:
             raise ConflictError("role still referenced by users")
         await audit(self.repo.session, "role.delete", "role", id, snapshot)
 
-    async def set_permissions(self, role_id: int, permission_ids: list[int]) -> Role:
-        role = await self.repo.get_by_id_with_permission(role_id)
-        if not role:
-            raise NotFoundError("role not found")
-
-        perms = await self.perm_repo.get_by_ids(permission_ids)
-        found_ids = {p.id for p in perms}
-        missing = set(permission_ids) - found_ids
-        if missing:
-            raise NotFoundError(f"permission not found: {sorted(missing)}")
-
-        role.permissions = perms
-        await self.repo.save(role)
-        await audit(
-            self.repo.session,
-            "role.set_permissions",
-            "role",
-            role_id,
-            {"permission_ids": sorted(permission_ids)},
-        )
-        return await self.repo.get_by_id_with_permission(role_id)
-
     async def add_permissions(self, role_id: int, permission_ids: list[int]) -> Role:
         role = await self.repo.get_by_id_with_permission(role_id)
         if not role:
