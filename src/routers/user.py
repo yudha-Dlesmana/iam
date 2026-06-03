@@ -2,6 +2,7 @@ from fastapi import APIRouter, status, Query
 
 from src.schemas.common import PaginatedResponse
 from src.schemas.user import UserCreate, UserUpdate, UserResponse
+from src.schemas.auth import SessionResponse
 from src.lib.deps import UserServiceDep
 from src.lib.deps import require_permission
 from src.lib.pagination import MAX_PAGE_LIMIT
@@ -68,3 +69,21 @@ async def delete_user(id: str, service: UserServiceDep):
 )
 async def revoke_user_tokens(id: str, service: UserServiceDep):
     await service.revoke_tokens(id)
+
+
+@router.get(
+    "/{id}/sessions",
+    response_model=list[SessionResponse],
+    dependencies=[require_permission("iam.user.read")],
+)
+async def user_sessions(id: str, service: UserServiceDep):
+    return await service.sessions(id)
+
+
+@router.delete(
+    "/{id}/sessions/{device}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_permission("iam.user.update")],
+)
+async def revoke_user_session(id: str, device: str, service: UserServiceDep):
+    await service.revoke_session(id, device)

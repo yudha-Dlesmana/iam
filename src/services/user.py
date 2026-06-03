@@ -4,7 +4,12 @@ from sqlalchemy.exc import IntegrityError
 from src.models import User
 from src.schemas.user import UserCreate, UserUpdate
 from src.core.revocation import mark_revoked
-from src.core.security import hash_password, revoke_user as revoke_sessions
+from src.core.security import (
+    hash_password,
+    revoke_user as revoke_sessions,
+    revoke_device,
+    list_sessions,
+)
 from src.repositories.user import UserRepository
 from src.exceptions.base import NotFoundError, ConflictError
 from src.lib.audit import record as audit
@@ -88,3 +93,14 @@ class UserService:
         await mark_revoked(self.redis, user.id)
         await revoke_sessions(self.redis, user.id)
         await audit(self.repo.session, "user.revoke_tokens", "user", user.id)
+
+    async def sessions(self, id: str) -> list[dict]:
+        user = await self.get(id)
+        return await list_sessions(self.redis, user.id)
+
+    async def revoke_session(self, id: str, device: str) -> None:
+        user = await self.get(id)
+        await revoke_device(self.redis, user.id, device)
+        await audit(
+            self.repo.session, "user.revoke_session", "user", user.id, {"device": device}
+        )
