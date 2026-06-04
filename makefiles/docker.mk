@@ -1,7 +1,7 @@
 .PHONY: start stop reset
 
 start:
-	docker compose up -d
+	docker compose -f docker-compose-dev.yml up  -d
 
 stop:
 	docker compose stop
