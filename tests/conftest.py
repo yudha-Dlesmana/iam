@@ -89,6 +89,14 @@ def auth(client):
                 SESSIONS, headers={"Authorization": f"Bearer {access_token}"}
             )
 
+        async def current_session(self, token, access_token):
+            client.cookies.clear()
+            client.cookies.set("refresh_token", token, path="/v1/auth")
+            return await client.get(
+                SESSIONS + "/current",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+
         async def me(self, access_token):
             return await client.get(
                 ME, headers={"Authorization": f"Bearer {access_token}"}

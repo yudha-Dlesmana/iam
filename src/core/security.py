@@ -174,6 +174,16 @@ async def revoke_user(r: Redis, user_id: str) -> None:
     await r.delete(f"sessions:{user_id}")
 
 
+async def get_session(r: Redis, user_id: str, device: str) -> dict | None:
+    raw = await r.hget(f"sessions:{user_id}", device)
+    if raw is None:
+        return None
+    data = json.loads(raw)
+    data.pop("jti", None)
+    data["device"] = device
+    return data
+
+
 async def list_sessions(r: Redis, user_id: str) -> list[dict]:
     raw = await r.hgetall(f"sessions:{user_id}")
     out = []

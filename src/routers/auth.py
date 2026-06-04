@@ -102,6 +102,17 @@ async def sessions(uid: CurrentUserId, service: AuthServiceDep):
     return await service.sessions(uid)
 
 
+@router.get("/sessions/current", response_model=SessionResponse)
+async def current_session(
+    uid: CurrentUserId,
+    service: AuthServiceDep,
+    refresh_token: Annotated[str | None, Cookie(include_in_schema=False)] = None,
+):
+    if not refresh_token:
+        raise UnauthorizedError("missing refresh token")
+    return await service.current_session(refresh_token, uid)
+
+
 @router.get("/current-user", response_model=UserResponse)
 async def current_user(uid: CurrentUserId, service: UserServiceDep):
     return await service.get(uid)

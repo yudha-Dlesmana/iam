@@ -15,6 +15,7 @@ from src.core.security import (
     revoke_device,
     revoke_user,
     list_sessions,
+    get_session,
 )
 from src.core.logging import get_logger
 
@@ -121,3 +122,17 @@ class AuthService:
 
     async def sessions(self, user_id: str) -> list[dict]:
         return await list_sessions(self.redis, user_id)
+
+    async def current_session(self, token: str, user_id: str) -> dict:
+        try:
+            payload = decode_refresh_token(token)
+        except jwt.InvalidTokenError as e:
+            raise UnauthorizedError("invalid token") from e
+
+        if payload["sub"] != user_id:
+            raise UnauthorizedError("token mismatch")
+
+        session = await get_session(self.redis, user_id, payload["device"])
+        if session is None:
+            raise UnauthorizedError("session expired")
+        return session
