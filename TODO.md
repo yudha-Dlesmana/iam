@@ -46,9 +46,45 @@ Also revisit CSRF for prod: with `SameSite=None`, `/refresh` is CSRF-triggerable
 impact is limited (new tokens return in the body, unreadable cross-origin) but
 consider a CSRF token if tightening. See [INTEGRATION.md](INTEGRATION.md) Part 3.
 
+## Security hardening
+
+Ordered by effort-to-impact. None block dev, but close before a public/high-assurance deploy.
+
+### 5. Fix login timing oracle → user enumeration (quick, real)
+`AuthService.login` (`src/services/auth.py:61-66`) only calls `verify_password` when the
+user exists. Unknown email returns faster (skips the Argon2 hash), so an attacker can
+time-probe which emails are registered — defeating the uniform `"invalid credentials"`
+message. Fix: when no user (or no password) is found, run a dummy `verify_password`
+against a precomputed throwaway Argon2 hash so both paths spend the same time, then fail.
+
+### 6. CSRF token for `/refresh` under `SameSite=None` (prod)
+Confirmed: `_SAMESITE = "none"` in production (`src/routers/auth.py:16`). The refresh
+cookie is then sent on cross-site requests, so `/v1/auth/refresh` is CSRF-triggerable.
+Impact is limited (rotated tokens return in the body, unreadable cross-origin, and a forged
+refresh just rotates the victim's own session) — but add a double-submit CSRF token or an
+`Origin`/`Sec-Fetch-Site` check if tightening. Overlaps with #4. See [INTEGRATION.md](INTEGRATION.md) Part 3.
+
+### 7. Global rate limit (defense in depth)
+Only `/auth/login` is throttled (`src/services/auth.py`). `/auth/refresh`, password-bearing
+and write endpoints have no ceiling. Add a global IP-based limiter (middleware or reverse
+proxy) so a single client can't hammer the API or brute-force refresh tokens.
+
+### 8. Refresh-secret rotation story (single point of failure)
+Refresh tokens are HS256 signed by one shared `JWT_REFRESH_SECRET`. If it leaks, every
+refresh token is forgeable — and unlike the RS256 access keyset there is no `kid`/rotation
+path, so rotating it invalidates all live sessions at once. Decide: either (a) accept it and
+lean on rotation #3 + reuse-detection, or (b) move refresh signing to a kid'd keyset (HS256
+with versioned secrets, or RS256) so it can roll without a mass logout.
+
+### 9. (Optional) Per-session access-token revocation
+Today revocation is per-user (`revoked:user:{id}`, `src/core/revocation.py`) — `revoke_session`
+drops only the device's refresh entry, leaving its access token valid until the 15-min expiry.
+If instant per-device kill is needed, add a `sid` claim to the access token, blacklist it in
+Redis (`revoked:sid:{sid}`, TTL = access TTL), and check it in `get_current_claims` (fold into
+the existing per-user lookup — one round-trip). Skip if short TTL is acceptable.
+
 ## Known limitations (defer until real ops pain)
 
 - No request-ID middleware → cross-service log correlation is manual.
 - Logs are plain text, not JSON → log aggregators do extra parsing.
 - `/v1/health` is one endpoint for liveness + readiness; LBs may want split semantics.
-- No global rate limit beyond `/auth/login`.
