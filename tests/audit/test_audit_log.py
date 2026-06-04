@@ -145,3 +145,35 @@ async def test_audit_endpoint_filters_by_action(client, db, actor_admin):
 async def test_audit_endpoint_requires_permission(client, reader_only):
     res = await client.get("/v1/audit-logs")
     assert res.status_code == 403
+
+
+async def test_audit_endpoint_resolves_actor_email(client, db, actor_admin, existing_role):
+    await client.patch(f"/v1/roles/{existing_role.id}", json={"name": "xy"})
+
+    item = (await client.get("/v1/audit-logs")).json()["items"][0]
+    assert item["actor_id"] == actor_admin.id
+    assert item["actor_email"] == "actor@x.com"
+    # role target is not a user → no email, raw id kept
+    assert item["target_type"] == "role"
+    assert item["target_email"] is None
+    assert item["target_id"] == str(existing_role.id)
+
+
+async def test_audit_endpoint_resolves_user_target_email(
+    client, db, actor_admin, existing_role
+):
+    target = User(email="target@x.com", password=hash_password("!Qwer123"))
+    db.add(target)
+    await db.commit()
+
+    res = await client.patch(
+        f"/v1/users/{target.id}", json={"role_id": existing_role.id}
+    )
+    assert res.status_code == 200
+
+    item = (
+        await client.get("/v1/audit-logs", params={"action": "user.role_changed"})
+    ).json()["items"][0]
+    assert item["target_type"] == "user"
+    assert item["target_id"] == target.id
+    assert item["target_email"] == "target@x.com"

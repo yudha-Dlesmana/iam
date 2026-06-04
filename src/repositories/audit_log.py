@@ -1,7 +1,8 @@
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
-from src.models import AuditLog
+from src.models import AuditLog, User
 
 
 class AuditLogRepository:
@@ -16,7 +17,17 @@ class AuditLogRepository:
         target_type: str | None = None,
         actor_id: str | None = None,
     ) -> list[AuditLog]:
-        stmt = select(AuditLog).order_by(desc(AuditLog.created_at))
+        actor = aliased(User)
+        target = aliased(User)
+        stmt = (
+            select(AuditLog, actor.email, target.email)
+            .outerjoin(actor, actor.id == AuditLog.actor_id)
+            .outerjoin(
+                target,
+                (target.id == AuditLog.target_id) & (AuditLog.target_type == "user"),
+            )
+            .order_by(desc(AuditLog.created_at))
+        )
         if action:
             stmt = stmt.where(AuditLog.action == action)
         if target_type:
@@ -24,8 +35,13 @@ class AuditLogRepository:
         if actor_id:
             stmt = stmt.where(AuditLog.actor_id == actor_id)
         stmt = stmt.limit(limit).offset(offset)
-        result = await self.session.scalars(stmt)
-        return list(result.all())
+        result = await self.session.execute(stmt)
+        rows = []
+        for log, actor_email, target_email in result.all():
+            log.actor_email = actor_email
+            log.target_email = target_email
+            rows.append(log)
+        return rows
 
     async def count(
         self,
