@@ -27,6 +27,9 @@ done
 echo "== build"
 $COMPOSE --env-file "$ENV_OUT" build
 
+echo "== start db + redis (healthy)"
+$COMPOSE --env-file "$ENV_OUT" up -d --wait mysql redis
+
 echo "== migrate + seed"
 $COMPOSE --env-file "$ENV_OUT" run --rm migrate
 
