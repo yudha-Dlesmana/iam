@@ -13,16 +13,16 @@ migrate-prod:
 	$(COMPOSE_PROD) --env-file runtime/.env run --rm migrate
 
 logs-prod:
-	$(COMPOSE_PROD) logs -f app
+	$(COMPOSE_PROD) --env-file runtime/.env logs -f app
 
 ps-prod:
-	$(COMPOSE_PROD) ps
+	$(COMPOSE_PROD) --env-file runtime/.env ps
 
 down-prod:
-	$(COMPOSE_PROD) down
+	$(COMPOSE_PROD) --env-file runtime/.env down
 
 restart-prod:
-	$(COMPOSE_PROD) restart app
+	$(COMPOSE_PROD) --env-file runtime/.env restart app
 
 secrets-edit:
 	sops secrets/production.env
