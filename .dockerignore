@@ -1,0 +1,43 @@
+# === security ===
+keys
+.env
+.env.*
+!.env.example
+secrets
+runtime
+
+# === Git & CI ===
+.git
+.github
+
+# === Python: virtualenv & cache ===
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# === Test & coverage ===
+tests
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# === Editor & OS ===
+.vscode
+.idea
+.DS_Store
+
+# === Docs (gak perlu di runtime) ===
+README.md
+TODO.md
+CLAUDE.md
+INTEGRATION.md
+
+# === Compose (gak dipakai di dalam image) ===
+docker-compose.yml
+docker-compose-dev.yml
+docker-compose.prod.yml
