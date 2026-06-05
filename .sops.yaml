@@ -1,0 +1,6 @@
+creation_rules:
+  - path_regex: secrets/.*\.env$
+    age: "age1jqgavwk2wdp6u2seh85pxju22gxp0z67hv0t4f4s8h6tmcmyrqeq3ks250"
+  
+  - path_regex: secrets/keys/.*/private\.pem$
+    age: "age1jqgavwk2wdp6u2seh85pxju22gxp0z67hv0t4f4s8h6tmcmyrqeq3ks250"
