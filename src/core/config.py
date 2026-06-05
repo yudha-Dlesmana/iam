@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     FORWARDED_ALLOW_IPS: str = ""
 
     DB_URL: str
-    TEST_DB_URL: str
+    TEST_DB_URL: str = ""
 
     REDIS_URL: str
 
