@@ -36,4 +36,5 @@ $COMPOSE --env-file "$ENV_OUT" run --rm migrate
 echo "== up"
 $COMPOSE --env-file "$ENV_OUT" up -d app
 
-echo "== DONE, check: curl http://localhost:9001/v1/health"
+HOST="${HEALTH_HOST:-localhost}"
+echo "== DONE, check: curl http://$HOST:9001/v1/health"
