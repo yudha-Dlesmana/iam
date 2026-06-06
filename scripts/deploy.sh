@@ -34,7 +34,7 @@ echo "== migrate + seed"
 $COMPOSE --env-file "$ENV_OUT" run --rm migrate
 
 echo "== up"
-$COMPOSE --env-file "$ENV_OUT" up -d app
+$COMPOSE --env-file "$ENV_OUT" up -d app caddy
 
 HOST="${HEALTH_HOST:-localhost}"
 echo "== DONE, check: curl http://$HOST:9001/v1/health"
