@@ -10,8 +10,6 @@ services:
       - runtime/.env
     volumes:
       - ./runtime/keys:/app/keys:ro
-    ports:
-      - "127.0.0.1:9001:9001"
     depends_on:
       mysql:
         condition: service_healthy
@@ -71,27 +69,20 @@ services:
       timeout: 5s
       retries: 5
 
-  caddy:
-    image: caddy:2-alpine
-    container_name: iam_caddy
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: iam_cloudflared
     restart: unless-stopped
-    env_file:
-      - runtime/.env
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     depends_on:
       - app
 
 volumes:
   mysql_data:
   redis_data:
-  caddy_data:
-  caddy_config:
+  
 
 networks:
   default:

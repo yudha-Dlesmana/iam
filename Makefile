@@ -4,5 +4,6 @@ include makefiles/deploy.mk
 
 help:
 		@echo 'Deploy:		make deploy | update | up-prod | down-prod '
-		@echo 'Logs:		make logs-prod | logs-caddy '
-		@echo 'Restart:		make restart-prod | restart-caddy '
+		@echo 'Logs:		make logs-prod | logs-cf '
+		@echo 'Restart:	make restart-prod | restart-cf '
+		@echo 'Secrets:	make secrets-edit '
