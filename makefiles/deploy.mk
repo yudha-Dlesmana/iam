@@ -1,4 +1,4 @@
-.PHONY: deploy update migrate-prod logs-prod ps-prod down-prod restart-prod secrets-edit
+.PHONY: deploy update migrate-prod logs-prod ps-prod up-prod down-prod restart-prod secrets-edit
 
 COMPOSE_PROD := docker compose -f docker-compose-prod.yml
 
@@ -17,6 +17,9 @@ logs-prod:
 
 ps-prod:
 	$(COMPOSE_PROD) --env-file runtime/.env ps
+
+up-prod:
+	$(COMPOSE_PROD) --env-file runtime/.env up
 
 down-prod:
 	$(COMPOSE_PROD) --env-file runtime/.env down
