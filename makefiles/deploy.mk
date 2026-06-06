@@ -1,4 +1,4 @@
-.PHONY: deploy update migrate-prod logs-prod ps-prod up-prod down-prod restart-prod secrets-edit
+.PHONY: deploy update migrate-prod logs-prod logs-caddy ps-prod up-prod down-prod restart-prod restart-caddy secrets-edit
 
 COMPOSE_PROD := docker compose -f docker-compose-prod.yml
 
@@ -15,6 +15,9 @@ migrate-prod:
 logs-prod:
 	$(COMPOSE_PROD) --env-file runtime/.env logs -f app
 
+logs-caddy:
+	$(COMPOSE_PROD) --env-file runtime/.env logs -f caddy
+
 ps-prod:
 	$(COMPOSE_PROD) --env-file runtime/.env ps
 
@@ -26,6 +29,9 @@ down-prod:
 
 restart-prod:
 	$(COMPOSE_PROD) --env-file runtime/.env restart app
+
+restart-caddy:
+	$(COMPOSE_PROD) --env-file runtime/.env restart caddy
 
 secrets-edit:
 	sops secrets/production.env
