@@ -1,0 +1,3 @@
+{$IAM_DOMAIN} {
+        reverse_proxy app:9001
+}
