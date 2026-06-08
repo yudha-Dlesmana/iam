@@ -4,7 +4,7 @@ from redis.asyncio import Redis
 from src.schemas.auth import TokenPair
 from src.repositories.user import UserRepository
 from src.exceptions.base import UnauthorizedError, TooManyRequestsError
-from src.core.rate_limit import hit as rl_hit, reset as rl_reset
+from lib.rate_limit import hit as rl_hit, reset as rl_reset
 from src.core.security import (
     verify_password,
     hash_password,

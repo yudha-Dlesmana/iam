@@ -4,7 +4,7 @@ import pytest_asyncio
 
 from src.app import app
 from src.core.audit_context import actor_id_var
-from src.core.revocation import get_revoked_at, mark_revoked
+from lib.revocation import get_revoked_at, mark_revoked
 from src.core.security import create_access_token, hash_password
 from src.lib.deps import get_current_claims
 from src.models import Role, User

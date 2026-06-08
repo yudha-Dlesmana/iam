@@ -4,7 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core.config import settings
 from src.core.redis import redis_client
-from src.core.rate_limit import hit
+from lib.rate_limit import hit
 
 
 _EXEMPT = {"/v1/health", "/.well-known/jwks.json"}

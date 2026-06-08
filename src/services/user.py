@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.models import User
 from src.schemas.user import UserCreate, UserUpdate
-from src.core.revocation import mark_revoked
+from lib.revocation import mark_revoked
 from src.core.security import (
     hash_password,
     revoke_user as revoke_sessions,
@@ -102,5 +102,9 @@ class UserService:
         user = await self.get(id)
         await revoke_device(self.redis, user.id, device)
         await audit(
-            self.repo.session, "user.revoke_session", "user", user.id, {"device": device}
+            self.repo.session,
+            "user.revoke_session",
+            "user",
+            user.id,
+            {"device": device},
         )
