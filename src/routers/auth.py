@@ -3,8 +3,9 @@ from fastapi import APIRouter, Cookie, Request, Response, status
 
 from src.core.config import settings
 from src.core.security import REFRESH_TTL
-from src.exceptions.base import UnauthorizedError
+from src.exceptions.base import UnauthorizedError, ForbiddenError
 from src.lib.deps import AuthServiceDep, CurrentUserId, UserServiceDep
+from src.lib.http import client_ip
 from src.schemas.auth import LoginRequest, TokenResponse, SessionResponse
 from src.schemas.user import UserResponse
 
@@ -14,13 +15,6 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 REFRESH_COOKIE = "refresh_token"
 COOKIE_PATH = "/"
 _SAMESITE = "none" if settings.is_production else "lax"
-
-
-def _client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for")
-    if xff:
-        return xff.split(",")[0].strip()
-    return request.client.host if request.client else ""
 
 
 def _set_refresh_cookie(response: Response, token: str) -> None:
@@ -47,6 +41,16 @@ def _clear_refresh_cookie(response: Response) -> None:
     )
 
 
+def _check_origin(request: Request) -> None:
+    sec_fetch = request.headers.get("sec-fetch-site")
+    if sec_fetch in {"same-origin", "same-site"}:
+        return
+    origin = request.headers.get("origin")
+    if origin and origin in settings.cors_origins:
+        return
+    raise ForbiddenError("cross-site request rejected")
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(
     data: LoginRequest, request: Request, response: Response, service: AuthServiceDep
@@ -54,7 +58,7 @@ async def login(
     pair = await service.login(
         data.email,
         data.password,
-        ip=_client_ip(request),
+        ip=client_ip(request),
         ua=request.headers.get("user-agent", ""),
     )
     _set_refresh_cookie(response, pair.refresh_token)
@@ -68,9 +72,10 @@ async def refresh(
     service: AuthServiceDep,
     refresh_token: Annotated[str | None, Cookie(include_in_schema=False)] = None,
 ):
+    _check_origin(request=request)
     if not refresh_token:
         raise UnauthorizedError("missing refresh token")
-    pair = await service.refresh(refresh_token, ip=_client_ip(request))
+    pair = await service.refresh(refresh_token, ip=client_ip(request))
     _set_refresh_cookie(response, pair.refresh_token)
     return TokenResponse(access_token=pair.access_token)
 
