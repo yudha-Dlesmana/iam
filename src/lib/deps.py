@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.audit_context import actor_id_var
 from src.core.database import get_db
 from src.core.redis import get_redis
-from lib.revocation import is_token_revoked
+from src.lib.revocation import is_token_revoked
 from src.core.security import decode_access_token
 from src.repositories.audit_log import AuditLogRepository
 from src.repositories.health import HealthRepository

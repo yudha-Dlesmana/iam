@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.models import User
 from src.schemas.user import UserCreate, UserUpdate
-from lib.revocation import mark_revoked
+from src.lib.revocation import mark_revoked
 from src.core.security import (
     hash_password,
     revoke_user as revoke_sessions,

@@ -49,9 +49,22 @@ async def user(db):
 async def client(db, redis):
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_redis] = lambda: redis
+    # The global rate-limit middleware uses the module-level redis_client singleton
+    # directly (not via DI), so point it at the test redis for this test's loop.
+    import src.core.rate_limit_middleware as rlm
+
+    original_redis = rlm.redis_client
+    rlm.redis_client = redis
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    # Simulate a same-origin browser so the /refresh CSRF guard (_check_origin)
+    # accepts the request, just like a real SPA would.
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Sec-Fetch-Site": "same-origin"},
+    ) as c:
         yield c
+    rlm.redis_client = original_redis
     app.dependency_overrides.clear()
 
 
