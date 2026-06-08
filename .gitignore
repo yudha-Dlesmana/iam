@@ -1,5 +1,6 @@
-# keypair
+# secrets
 keys/
+runtime/
 
 # pytho bytecode & cache
 __pycache__/
