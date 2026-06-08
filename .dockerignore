@@ -1,0 +1,22 @@
+# === Secrets — JANGAN sampai masuk image ===
+.env
+keys/
+
+# === Repo history ===
+.git/
+
+# === Environment & cache lokal ===
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# === Tidak dipakai runtime production ===
+tests/
+*.md
+.github/
+
+# === Meta build ===
+docker-compose*.yml
+Dockerfile

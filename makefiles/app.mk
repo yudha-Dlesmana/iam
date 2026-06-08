@@ -5,7 +5,7 @@ PYTEST := .venv/bin/pytest
 .PHONY: install run test test-path test-cov gen-keys
 
 install:
-	$(PIP) install -r requirements.txt
+	$(PIP) install -r requirements-dev.txt
 
 run:
 	$(PYTHON) main.py

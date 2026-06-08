@@ -13,13 +13,14 @@ Deferred work for the IAM microservice. Tracked here so it isn't lost.
 - Handle the case where a Google email matches an existing password user (link vs reject).
 
 ### 2. Secrets management (infra)
-Blocked on host decision. After picking a host (Fly / Cloud Run / Railway / Render / k8s / etc.), move these out of `.env`:
+Host decided: **self-hosted Ubuntu + Cloudflare Tunnel**. Current plan keeps secrets in a
+server-only `.env` (never committed) and mounts `keys/` read-only into the container — see
+[PRODUCTION_TUTORIAL.md](PRODUCTION_TUTORIAL.md) Bagian B & C. To harden further, move these
+out of `.env` into a real secret store (Doppler / Vault / SOPS-encrypted file):
 - JWT private keys (`keys/<kid>/private.pem`)
 - `JWT_REFRESH_SECRET`
 - `DB_URL`, `REDIS_URL`
 - `GOOGLE_CLIENT_SECRET`
-
-Use the host's native secret store (Fly secrets / GCP Secret Manager / AWS SM / Doppler / Vault). See [DEPLOYMENT.md](DEPLOYMENT.md) section 3 for the keys-mounting strategies and section 8 for per-host examples.
 
 ### 3. Rotate dev secrets (ops)
 Before any deploy — the current `.env` values were exposed during this development session. Rotate:
@@ -42,41 +43,18 @@ the blocker is the **domain**, not the path. Pick one before launch:
 - **`/me` check** — middleware calls an IAM session endpoint rather than reading
   the cookie directly.
 
-Also revisit CSRF for prod: with `SameSite=None`, `/refresh` is CSRF-triggerable;
-impact is limited (new tokens return in the body, unreadable cross-origin) but
-consider a CSRF token if tightening. See [INTEGRATION.md](INTEGRATION.md) Part 3.
-
 ## Security hardening
 
 Ordered by effort-to-impact. None block dev, but close before a public/high-assurance deploy.
 
-### 5. Fix login timing oracle → user enumeration (quick, real)
-`AuthService.login` (`src/services/auth.py:61-66`) only calls `verify_password` when the
-user exists. Unknown email returns faster (skips the Argon2 hash), so an attacker can
-time-probe which emails are registered — defeating the uniform `"invalid credentials"`
-message. Fix: when no user (or no password) is found, run a dummy `verify_password`
-against a precomputed throwaway Argon2 hash so both paths spend the same time, then fail.
-
-### 6. CSRF token for `/refresh` under `SameSite=None` (prod)
-Confirmed: `_SAMESITE = "none"` in production (`src/routers/auth.py:16`). The refresh
-cookie is then sent on cross-site requests, so `/v1/auth/refresh` is CSRF-triggerable.
-Impact is limited (rotated tokens return in the body, unreadable cross-origin, and a forged
-refresh just rotates the victim's own session) — but add a double-submit CSRF token or an
-`Origin`/`Sec-Fetch-Site` check if tightening. Overlaps with #4. See [INTEGRATION.md](INTEGRATION.md) Part 3.
-
-### 7. Global rate limit (defense in depth)
-Only `/auth/login` is throttled (`src/services/auth.py`). `/auth/refresh`, password-bearing
-and write endpoints have no ceiling. Add a global IP-based limiter (middleware or reverse
-proxy) so a single client can't hammer the API or brute-force refresh tokens.
-
-### 8. Refresh-secret rotation story (single point of failure)
+### 5. Refresh-secret rotation story (single point of failure)
 Refresh tokens are HS256 signed by one shared `JWT_REFRESH_SECRET`. If it leaks, every
 refresh token is forgeable — and unlike the RS256 access keyset there is no `kid`/rotation
 path, so rotating it invalidates all live sessions at once. Decide: either (a) accept it and
 lean on rotation #3 + reuse-detection, or (b) move refresh signing to a kid'd keyset (HS256
 with versioned secrets, or RS256) so it can roll without a mass logout.
 
-### 9. (Optional) Per-session access-token revocation
+### 6. (Optional) Per-session access-token revocation
 Today revocation is per-user (`revoked:user:{id}`, `src/core/revocation.py`) — `revoke_session`
 drops only the device's refresh entry, leaving its access token valid until the 15-min expiry.
 If instant per-device kill is needed, add a `sid` claim to the access token, blacklist it in
