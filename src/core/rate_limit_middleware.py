@@ -4,17 +4,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core.config import settings
 from src.core.redis import redis_client
+from lib.http import client_ip
 from lib.rate_limit import hit
 
 
 _EXEMPT = {"/v1/health", "/.well-known/jwks.json"}
-
-
-def _client_ip(request: Request) -> str:
-    xff = request.headers.get("x-forwarded-for")
-    if xff:
-        return xff.split(",")[0].strip()
-    return request.client.host if request.client else ""
 
 
 class GlobalRateLimitMiddleware(BaseHTTPMiddleware):
@@ -22,7 +16,7 @@ class GlobalRateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or request.url.path in _EXEMPT:
             return await call_next(request)
 
-        ip = _client_ip(request)
+        ip = client_ip(request)
         if ip:
             allowed, retry_after = await hit(
                 redis_client,
