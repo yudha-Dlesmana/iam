@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from fastapi import FastAPI
 
 from src.core.audit_middleware import register_audit_middleware
+from src.core.rate_limit_middleware import register_global_rate_limit
 from src.core.database import engine
 from src.core.cors import register_cors
 from src.core.logging import setup_logging
@@ -24,6 +25,7 @@ app = FastAPI(lifespan=lifespan)
 register_exception_handlers(app)
 register_security_headers(app)
 register_audit_middleware(app)
+register_global_rate_limit(app)
 register_cors(app)
 
 

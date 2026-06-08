@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     JWT_ISSUER: str = "iam"
     JWT_REFRESH_SECRET: str
 
+    GLOBAL_RATE_LIMIT: int = 120
+    GLOBAL_RATE_WINDOW: int = 60
+
     @property
     def cors_origins(self) -> list[str]:
         return [u.strip() for u in self.FRONTEND_URLs.split(",") if u.strip()]
