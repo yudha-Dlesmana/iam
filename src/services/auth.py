@@ -7,6 +7,7 @@ from src.exceptions.base import UnauthorizedError, TooManyRequestsError
 from src.core.rate_limit import hit as rl_hit, reset as rl_reset
 from src.core.security import (
     verify_password,
+    hash_password,
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
@@ -24,6 +25,7 @@ log = get_logger(__name__)
 LOGIN_EMAIL_LIMIT = 5
 LOGIN_IP_LIMIT = 20
 LOGIN_WINDOW_SECONDS = 15 * 60
+_DUMMY_HASH = hash_password("dummy-password-for-timing-equalization")
 
 
 class AuthService:
@@ -60,6 +62,7 @@ class AuthService:
         user = await self.repo.get_by_email(email)
 
         if not user or not user.password:
+            verify_password(_DUMMY_HASH, plain=password)
             log.warning("login failed: unknown email=%s", email)
             raise UnauthorizedError("invalid credentials")
         if not verify_password(user.password, plain=password):
