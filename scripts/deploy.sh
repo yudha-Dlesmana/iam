@@ -11,6 +11,8 @@ log "Preflight checks"
 [ -f runtime/.env ]  || fail "runtime/.env tidak ada"
 [ -d runtime/keys ]  || fail "runtime/keys/ tidak ada"
 
+chmod -R a+rX runtime/keys
+
 log "Build image"
 $COMPOSE build
 

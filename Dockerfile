@@ -31,13 +31,14 @@ COPY alembic ./alembic
 COPY alembic.ini main.py ./
 COPY scripts ./scripts
 
-RUN groupadd --system app && useradd --system --gid app --create-home app \
-    && chown -R app:app /app
+RUN groupadd --system --gid 10001 app \
+     && useradd --system --uid 10001 --gid app --create-home app 
+
 USER app
 
 EXPOSE 9001
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=60s --timeout=3s --start-period=20s --retries=3 \
     CMD curl -fsS http://localhost:9001/v1/health || exit 1
 
 CMD ["python", "main.py"]
