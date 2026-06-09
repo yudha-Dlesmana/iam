@@ -9,12 +9,10 @@ fail() { printf '\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 
 log "Preflight checks"
 [ -f secrets/prod.enc.env ]  	|| fail "secrets/prod.enc.env tidak ada"
-[ -d runtime/keys ]  		|| fail "runtime/keys/ tidak ada"
+[ -d runtime/keys ]  		      || fail "runtime/keys/ tidak ada"
 
 log "Decrypt secret"
 sops -d secrets/prod.enc.env > runtime/.env
-
-chmod -R a+rX runtime/keys
 
 log "Build image"
 $COMPOSE build
