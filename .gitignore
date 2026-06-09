@@ -1,34 +1,35 @@
-# secrets
-keys/
-runtime/
+# === Secrets — JANGAN commit ===
+.env
+.env.*
+!.env.example
+age-key.txt              
+keys/                    
+runtime/                 
+secrets/*.env            
+!secrets/*.enc.env     
 
-# pytho bytecode & cache
+# === Python bytecode & cache ===
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# virtual environment
+# === Virtual environment ===
 .venv/
 venv/
 env/
 
-# environment variables
-.env
-.env.*
-!.env.example
+# === Alembic ===
+alembic/versions/*.pyc
 
-# IDE & OS files
+# === Test & coverage ===
+.pytest_cache/
+.coverage
+htmlcov/
+
+# === IDE & OS ===
 .vscode/
 .idea/
 .DS_Store
 pyrefly.toml
-
-# Alembic
-alembic/versions/*.pyc
-
-# pytest / coverage
-.pytest_cache/
-.coverage
-htmlcov/
 

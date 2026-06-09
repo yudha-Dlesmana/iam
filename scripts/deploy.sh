@@ -8,8 +8,11 @@ log()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 fail() { printf '\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 
 log "Preflight checks"
-[ -f runtime/.env ]  || fail "runtime/.env tidak ada"
-[ -d runtime/keys ]  || fail "runtime/keys/ tidak ada"
+[ -f secrets/prod.enc.env ]  	|| fail "secrets/prod.enc.env tidak ada"
+[ -d runtime/keys ]  		|| fail "runtime/keys/ tidak ada"
+
+log "Decrypt secret"
+sops -d secrets/prod.enc.env > runtime/.env
 
 chmod -R a+rX runtime/keys
 
