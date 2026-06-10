@@ -1,7 +1,9 @@
+import json
 import logging
 import sys
 
 from src.core.config import settings
+from src.core.context import request_id_var
 
 
 class _HealthFilter(logging.Filter):
@@ -18,13 +20,36 @@ class _HealthFilter(logging.Filter):
         return True
 
 
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        data = {
+            "time": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "msg": record.getMessage(),
+        }
+        rid = request_id_var.get()
+        if rid:
+            data["request_id"] = rid
+
+        if record.exc_info:
+            data["exc"] = self.formatException(record.exc_info)
+        return json.dumps(data, ensure_ascii=False)
+
+
 def setup_logging() -> None:
     level = logging.INFO if settings.is_production else logging.DEBUG
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s %(levelname)s %(name)s | %(message)s",
-        stream=sys.stdout,
-    )
+    handler = logging.StreamHandler(sys.stdout)
+    if settings.is_production:
+        handler.setFormatter(JsonFormatter())
+    else:
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s %(name)s | %(message)s")
+        )
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.setLevel(level)
+    root.addHandler(handler)
     logging.getLogger("uvicorn.access").addFilter(_HealthFilter())
 
 

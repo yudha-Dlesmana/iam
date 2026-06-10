@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.core.audit_context import ip_var
+from src.core.context import ip_var
 from src.lib.http import client_ip
 
 

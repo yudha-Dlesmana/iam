@@ -2,7 +2,7 @@ import pytest_asyncio
 from sqlalchemy import select
 
 from src.app import app
-from src.core.audit_context import actor_id_var
+from src.core.context import actor_id_var
 from src.core.security import hash_password
 from src.lib.deps import get_current_claims
 from src.models import AuditLog, Role, User
@@ -87,14 +87,10 @@ async def test_role_create_records_audit(client, db, actor_admin):
 async def test_role_update_records_old_and_new_name(
     client, db, actor_admin, existing_role
 ):
-    res = await client.patch(
-        f"/v1/roles/{existing_role.id}", json={"name": "renamed"}
-    )
+    res = await client.patch(f"/v1/roles/{existing_role.id}", json={"name": "renamed"})
     assert res.status_code == 200
 
-    row = await db.scalar(
-        select(AuditLog).where(AuditLog.action == "role.update")
-    )
+    row = await db.scalar(select(AuditLog).where(AuditLog.action == "role.update"))
     assert row.meta == {"old_name": "member", "new_name": "renamed"}
 
 
@@ -102,9 +98,7 @@ async def test_role_delete_records_audit(client, db, actor_admin, existing_role)
     res = await client.delete(f"/v1/roles/{existing_role.id}")
     assert res.status_code == 204
 
-    row = await db.scalar(
-        select(AuditLog).where(AuditLog.action == "role.delete")
-    )
+    row = await db.scalar(select(AuditLog).where(AuditLog.action == "role.delete"))
     assert row is not None
     assert row.target_id == str(existing_role.id)
 
@@ -147,7 +141,9 @@ async def test_audit_endpoint_requires_permission(client, reader_only):
     assert res.status_code == 403
 
 
-async def test_audit_endpoint_resolves_actor_email(client, db, actor_admin, existing_role):
+async def test_audit_endpoint_resolves_actor_email(
+    client, db, actor_admin, existing_role
+):
     await client.patch(f"/v1/roles/{existing_role.id}", json={"name": "xy"})
 
     item = (await client.get("/v1/audit-logs")).json()["items"][0]

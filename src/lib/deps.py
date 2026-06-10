@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.audit_context import actor_id_var
+from src.core.context import actor_id_var
 from src.core.database import get_db
 from src.core.redis import get_redis
 from src.lib.revocation import is_token_revoked

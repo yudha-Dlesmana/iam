@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.audit_context import actor_id_var, ip_var
+from src.core.context import actor_id_var, ip_var
 from src.core.logging import get_logger
 from src.models import AuditLog
 
