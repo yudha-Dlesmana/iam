@@ -8,7 +8,7 @@ MOUNT="/home/yudha/hdd"
 mountpoint -q "$MOUNT" || { echo "ERROR: partisi $MOUNT belum ter-mount" >&2; exit 1; }
 
 mkdir -p "BACKUP_DIR"
-OUT="BACKUP_DIR/iam-$(date +%F-%H%M).sql.gz"
+OUT="$BACKUP_DIR/iam-$(date +%F-%H%M).sql.gz"
 
 docker exec iam_mysql sh -c \
     'exec mysqldump --single-transaction -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' \
