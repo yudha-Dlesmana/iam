@@ -32,3 +32,45 @@ sudo -u nobody cat runtime/keys/iam-key-prod-1/private.pem
 
 > `deploy.sh` tidak `chmod` keys (tidak override ownership 10001).
 
+---
+
+## Backup DB — aktifkan cron
+
+Backup DB jalan via `scripts/backup-db.sh` (dump → partisi `/home/yudha/hdd/backup/iam` +
+off-site ke R2 `r2:iam-backups/iam`). Penjadwalan pakai cron — **saat ini dimatikan**,
+aktifkan kalau perlu.
+
+### Prasyarat
+- Server timezone = Asia/Jakarta:
+  ```bash
+  timedatectl | grep "Time zone"            # cek
+  sudo timedatectl set-timezone Asia/Jakarta # kalau masih UTC
+  ```
+- Partisi `/home/yudha/hdd` ter-mount, rclone remote `r2` ter-config.
+
+### Aktifkan
+```bash
+crontab -e
+```
+Tambah (minggu jam 2 malam):
+```cron
+PATH=/usr/local/bin:/usr/bin:/bin
+0 2 * * 0 /usr/bin/bash /home/yudha/iam/scripts/backup-db.sh >> /home/yudha/hdd/backup/iam/backup.log 2>&1
+```
+verify: 
+``` bash
+crontab -l
+```
+
+### Nonaktifkan
+```bash
+crontab -e        # hapus / kasih '#' di depan baris backup
+# atau matikan semua:
+crontab -r        # HATI-HATI: hapus SEMUA crontab user
+```
+
+### Verifikasi jalan
+```bash
+cat /home/yudha/hdd/backup/iam/backup.log    # log tiap run
+rclone ls r2:iam-backups/iam                  # file ke-upload
+```
