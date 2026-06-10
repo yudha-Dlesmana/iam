@@ -1,6 +1,6 @@
 COMPOSE_PROD := docker compose -f docker-compose-prod.yml
 
-.PHONY: deploy prod-update prod-up prod-down prod-restart prod-logs prod-migrate prod-ps
+.PHONY: deploy prod-update prod-up prod-down prod-restart prod-logs prod-migrate prod-restore prod-ps
 
 deploy:
 	bash scripts/deploy.sh
@@ -23,6 +23,9 @@ prod-logs:
 
 prod-migrate:
 	$(COMPOSE_PROD) --profile tools run --rm migrate
+
+prod-restore:
+	bash scripts/restore-db.sh "$(f)"
 
 prod-ps:
 	$(COMPOSE_PROD) ps
