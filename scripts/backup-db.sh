@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 BACKUP_DIR="${BACKUP_DIR:-/home/yudha/hdd/backup/iam}"
 MOUNT="/home/yudha/hdd"
 
-mountpoint -q "$MOUNT" { echo "ERROR: partisi $MOUNT belum ter-mount" >&2; exit 1; }
+mountpoint -q "$MOUNT" || { echo "ERROR: partisi $MOUNT belum ter-mount" >&2; exit 1; }
 
 mkdir -p "BACKUP_DIR"
 OUT="BACKUP_DIR/iam-$(date +%F-%H%M).sql.gz
