@@ -15,4 +15,4 @@ docker exec iam_mysql sh -c \
     | gzip > "$OUT"
 
 find "$BACKUP_DIR" -name '*.sql.gz' -mtime +14 -delete
-echo "backup -> $OUT"
+echo "backup → $OUT"
