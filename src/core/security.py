@@ -41,6 +41,13 @@ def _audience_from(user: User) -> list[str]:
     return sorted(service) or [settings.JWT_ISSUER]
 
 
+def _refresh_secret(kid: str) -> str:
+    secret = settings.JWT_REFRESH_SECRETS.get(kid)
+    if not secret:
+        raise jwt.InvalidTokenError(f"unknown refresh kid: {kid}")
+    return secret
+
+
 class PayloadAccessToken(TypedDict):
     jti: str
     sub: str
@@ -113,13 +120,18 @@ def create_refresh_token(
         "iat": _now(),
         "exp": _now() + REFRESH_TTL,
     }
+    kid = settings.JWT_ACTIVE_KID
     token = jwt.encode(
-        payload, settings.JWT_REFRESH_SECRET, algorithm=REFRESH_ALGORITHM
+        payload, _refresh_secret(kid), algorithm=REFRESH_ALGORITHM, headers={"kid", kid}
     )
     return token, jti, device
 
 
 def decode_refresh_token(token: str) -> PayloadRefreshToken:
+    header = jwt.get_unverified_header(token)
+    kid = header.get("kid")
+    if not kid:
+        raise jwt.InvalidTokenError("missing refresh kid")
     return jwt.decode(
         token, settings.JWT_REFRESH_SECRET, algorithms=[REFRESH_ALGORITHM]
     )

@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     JWT_KEYS_DIR: str = "keys"
     JWT_ACTIVE_KID: str = "iam-key-1"
     JWT_ISSUER: str = "iam"
-    JWT_REFRESH_SECRET: str
+    JWT_REFRESH_SECRETS: dict[str, str]
+    JWT_REFRESH_ACTIVE_KID: str = "v1"
 
     GLOBAL_RATE_LIMIT: int = 120
     GLOBAL_RATE_WINDOW: int = 60
