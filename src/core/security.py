@@ -120,9 +120,9 @@ def create_refresh_token(
         "iat": _now(),
         "exp": _now() + REFRESH_TTL,
     }
-    kid = settings.JWT_ACTIVE_KID
+    kid = settings.JWT_REFRESH_ACTIVE_KID
     token = jwt.encode(
-        payload, _refresh_secret(kid), algorithm=REFRESH_ALGORITHM, headers={"kid", kid}
+        payload, _refresh_secret(kid), algorithm=REFRESH_ALGORITHM, headers={"kid": kid}
     )
     return token, jti, device
 
@@ -132,9 +132,7 @@ def decode_refresh_token(token: str) -> PayloadRefreshToken:
     kid = header.get("kid")
     if not kid:
         raise jwt.InvalidTokenError("missing refresh kid")
-    return jwt.decode(
-        token, settings.JWT_REFRESH_SECRET, algorithms=[REFRESH_ALGORITHM]
-    )
+    return jwt.decode(token, _refresh_secret(kid), algorithms=[REFRESH_ALGORITHM])
 
 
 async def store_session(
