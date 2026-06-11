@@ -74,3 +74,53 @@ crontab -r        # HATI-HATI: hapus SEMUA crontab user
 cat /home/yudha/hdd/backup/iam/backup.log    # log tiap run
 rclone ls r2:iam-backups/iam                  # file ke-upload
 ```
+
+---
+
+## Rotasi refresh-secret (HS256, ber-`kid`)
+
+Refresh token di assign dengan secret berversi: `JWT_REFRESH_SECRETS` = dict `{kid: secret}`,
+`JWT_REFRESH_ACTIVE_KID` = kid yang dipakai **menandatangani** token baru. Semua kid di dict
+masih bisa **memverifikasi**. Ini memungkinkan rotasi tanpa logout massal.
+
+**Manual** — server via SOPS (seperti rotasi RS256 key). Secret di
+`secrets/prod.enc.env` (terenkripsi).
+
+### Rotasi hygiene
+```bash
+# 1. generate secret baru
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# 2. edit SOPS — tambah kid baru + geser active (server)
+sops secrets/prod.enc.env
+#    JWT_REFRESH_SECRETS={"v1":"<lama>","v2":"<baru>"}
+#    JWT_REFRESH_ACTIVE_KID=v2
+
+# 3. redeploy → token baru pakai v2, token v1 lama TETAP verify (0 logout)
+make prod-update
+
+# 4. TUNGGU > 7 hari (REFRESH_TTL) — semua token v1 expire / ke-refresh ke v2
+
+# 5. cleanup — buang v1, redeploy
+sops secrets/prod.enc.env
+#    JWT_REFRESH_SECRETS={"v2":"<baru>"}
+make prod-update
+```
+
+### Emergency (secret bocor) — remove linked kid 
+```bash
+sops secrets/prod.enc.env
+#    JWT_REFRESH_SECRETS={"v2":"<baru>"}      ← v1 (bocor) dihapus, TIDAK disisakan
+#    JWT_REFRESH_ACTIVE_KID=v2
+make prod-update
+```
+Token v1 (ditandatangani secret bocor) langsung invalid → logout massal **disengaja** (biar
+token curian tidak bisa dipakai).
+
+| | Hygiene | Emergency |
+|---|---|---|
+| kid lama | disisakan 7 hari | dibuang langsung |
+| logout user | tidak | ya (disengaja) |
+
+> Aturan: `JWT_REFRESH_ACTIVE_KID` **wajib** salah satu key di `JWT_REFRESH_SECRETS`. Jangan
+> tertukar dengan `JWT_ACTIVE_KID` (itu kid access token RS256, keyset terpisah).
