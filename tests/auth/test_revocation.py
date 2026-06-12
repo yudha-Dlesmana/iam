@@ -49,7 +49,7 @@ async def test_mark_revoked_writes_redis(redis):
 
 
 async def test_old_access_token_rejected_after_revoke(client, redis, admin):
-    token = create_access_token(admin)
+    token = create_access_token(admin, sid="test-sid")
     me = await client.get(
         "/v1/auth/current-user",
         headers={"Authorization": f"Bearer {token}"},
@@ -71,7 +71,7 @@ async def test_new_token_after_revoke_still_works(client, redis, admin):
     await mark_revoked(redis, admin.id)
     await asyncio.sleep(1)
 
-    new_token = create_access_token(admin)
+    new_token = create_access_token(admin, sid="test-sid")
     res = await client.get(
         "/v1/auth/current-user",
         headers={"Authorization": f"Bearer {new_token}"},

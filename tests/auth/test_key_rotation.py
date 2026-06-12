@@ -71,16 +71,16 @@ def test_all_kids_loaded(two_kids):
 
 
 def test_active_kid_signs_with_active_key(two_kids):
-    token = create_access_token(_build_user())
+    token = create_access_token(_build_user(), sid="test-sid")
     header = jwt.get_unverified_header(token)
     assert header["kid"] == "iam-key-1"
 
 
 def test_old_token_still_verifies_after_active_kid_switch(two_kids, monkeypatch):
-    old_token = create_access_token(_build_user())
+    old_token = create_access_token(_build_user(), sid="test-sid")
 
     monkeypatch.setattr(settings, "JWT_ACTIVE_KID", "iam-key-2")
-    new_token = create_access_token(_build_user())
+    new_token = create_access_token(_build_user(), sid="test-sid")
 
     assert jwt.get_unverified_header(old_token)["kid"] == "iam-key-1"
     assert jwt.get_unverified_header(new_token)["kid"] == "iam-key-2"
@@ -93,7 +93,7 @@ def test_old_token_still_verifies_after_active_kid_switch(two_kids, monkeypatch)
 
 async def test_consumer_verifies_token_via_jwks(client, two_kids):
     """Simulate a downstream service verifying an IAM-issued token using JWKS."""
-    token = create_access_token(_build_user())
+    token = create_access_token(_build_user(), sid="test-sid")
 
     res = await client.get("/.well-known/jwks.json")
     assert res.status_code == 200
@@ -115,7 +115,7 @@ async def test_consumer_verifies_token_via_jwks(client, two_kids):
 
 
 async def test_consumer_rejects_wrong_audience(client, two_kids):
-    token = create_access_token(_build_user())
+    token = create_access_token(_build_user(), sid="test-sid")
 
     res = await client.get("/.well-known/jwks.json")
     jwks = res.json()["keys"]

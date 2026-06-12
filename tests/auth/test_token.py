@@ -17,7 +17,9 @@ def _build_user(role_name: str | None, perms: list[str]) -> User:
         return User(id="u1", email="a@b.com", role=None)
     role = Role(id=1, name=role_name)
     role.permissions = [
-        Permission(id=i + 1, name=p, service_id=1, service=Service(id=1, name=p.split(".")[0]))
+        Permission(
+            id=i + 1, name=p, service_id=1, service=Service(id=1, name=p.split(".")[0])
+        )
         for i, p in enumerate(perms)
     ]
     return User(id="u1", email="a@b.com", role_id=1, role=role)
@@ -48,7 +50,7 @@ def test_audience_from_multiple_services_sorted():
 
 def test_decode_access_token_ok():
     u = _build_user("admin", ["iam.user.read"])
-    token = create_access_token(u)
+    token = create_access_token(u, sid="test-sid")
     claims = decode_access_token(token)
     assert claims["sub"] == "u1"
     assert claims["iss"] == settings.JWT_ISSUER
