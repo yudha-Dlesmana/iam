@@ -116,7 +116,7 @@ class AuthService:
             return
 
         await revoke_device(self.redis, payload["sub"], payload["device"])
-        await mark_revoked(self.redis, payload["device"])
+        await mark_sid_revoked(self.redis, payload["device"])
 
     async def logout_all(self, token: str) -> None:
         try:
