@@ -18,6 +18,7 @@ from src.core.security import (
     list_sessions,
     get_session,
 )
+from src.lib.revocation import mark_sid_revoked, mark_revoked
 from src.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -75,8 +76,8 @@ class AuthService:
             await revoke_user(self.redis, user.id)
             log.info("single-session enforced: revoked prior sessions user=%s", user.id)
 
-        access_token = create_access_token(user)
         refresh_token, jti, device = create_refresh_token(user.id)
+        access_token = create_access_token(user, sid=device)
         await store_session(self.redis, user.id, device, jti, ip, ua)
         log.info("login success user=%s", user.id)
         return TokenPair(access_token=access_token, refresh_token=refresh_token)
@@ -105,7 +106,7 @@ class AuthService:
         if not user:
             raise UnauthorizedError("user not found")
 
-        new_access_token = create_access_token(user)
+        new_access_token = create_access_token(user, sid=device)
         return TokenPair(access_token=new_access_token, refresh_token=new_refresh_token)
 
     async def logout(self, token: str) -> None:
@@ -115,6 +116,7 @@ class AuthService:
             return
 
         await revoke_device(self.redis, payload["sub"], payload["device"])
+        await mark_revoked(self.redis, payload["device"])
 
     async def logout_all(self, token: str) -> None:
         try:
@@ -122,6 +124,7 @@ class AuthService:
         except jwt.InvalidTokenError:
             return
         await revoke_user(self.redis, payload["sub"])
+        await mark_revoked(self.redis, payload["sub"])
 
     async def sessions(self, user_id: str) -> list[dict]:
         return await list_sessions(self.redis, user_id)

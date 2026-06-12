@@ -50,6 +50,7 @@ def _refresh_secret(kid: str) -> str:
 
 class PayloadAccessToken(TypedDict):
     jti: str
+    sid: str
     sub: str
     iss: str
     aud: list[str]
@@ -60,9 +61,10 @@ class PayloadAccessToken(TypedDict):
     permissions: list[str]
 
 
-def create_access_token(user: User) -> str:
+def create_access_token(user: User, sid: str) -> str:
     payload: PayloadAccessToken = {
         "jti": str(uuid.uuid4()),
+        "sid": sid,
         "sub": user.id,
         "iss": settings.JWT_ISSUER,
         "aud": _audience_from(user),
