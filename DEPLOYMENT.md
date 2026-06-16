@@ -18,16 +18,15 @@ Public hostname `iam.smana.web.id` → Service **HTTP** `app:9001` (set in the C
 
 
 Secrets are managed with SOPS+age. `secrets/prod.enc.env` (encrypted, committed) → Decrypted to `runtime/.env` (gitignored), which every service reads via `env_file`.
-
-
 ---
+
 ## Server prerequisites (once per server)
 
 Install **Docker**, **age**, and **sops**.
 
 SOPS secrets are decrypted with centralized age key at `~/.config/sops/age/keys.txt`
 (sops finds it automatically; one file holds one key per project). Restore it from offline backup / password manager — without it, `prod.enc.env` can't be decrypted.
-
+---
 
 ## 1. First-time setup
 
@@ -46,39 +45,36 @@ mkdir -p runtime/keys && mv keys/iam-key-prod-1 runtime/keys/
 First deploy: `make deploy`.
 ---
 
-
 ## 2. Deploy & ops
 
 ### Deploy
 
 ```bash
-make deploy        # jalankan scripts/deploy.sh
-make prod-update   # git pull + deploy (untuk update versi baru)
+make deploy        # runs scripts/deploy.sh
+make prod-update   # git pull + deploy (for a new version)
 ```
 
-`deploy.sh` melakukan, berurutan:
-1. **Preflight** — pastikan `secrets/prod.enc.env` + `runtime/keys/` ada.
+`deploy.sh` does, in order:
+1. **Preflight** — check `secrets/prod.enc.env` + `runtime/keys/` exist.
 2. **Decrypt** — `sops -d secrets/prod.enc.env > runtime/.env`.
-3. **Build** — tag image lama jadi `iam:prev` (untuk rollback), build `iam:prod`, tag versi
-   `iam:<git-describe>`.
+3. **Build** — tag old image as `iam:prev` (for rollback), build `iam:prod`, tag the version `iam:<git-describe>`.
 4. **Up infra** — start mysql + redis.
 5. **Migrate + seed** — `alembic upgrade head && python -m scripts.seed`.
 6. **Up app + cloudflared**.
-7. **Tunggu healthy** (≤60s). Gagal → **auto-rollback** ke `iam:prev` lalu exit error.
+7. **Wait healthy** (≤60s). On failure → **auto-rollback** to `iam:prev` then exit error.
 
 ### Cheatsheet
 
-| Perintah | Aksi |
+| Command | Action |
 |----------|------|
-| `make deploy` | deploy versi sekarang |
+| `make deploy` | deploy current version |
 | `make prod-update` | git pull + deploy |
-| `make prod-restart` | restart app saja |
-| `make prod-logs` | tail log semua service |
-| `make prod-ps` | status container |
-| `make prod-migrate` | migrasi manual |
-| `make prod-down` | stop semua |
-| `make prod-restore f=<file>` | restore DB dari backup (§4) |
-
+| `make prod-restart` | restart app only |
+| `make prod-logs` | tail logs of all services |
+| `make prod-ps` | container status |
+| `make prod-migrate` | run migrations manually |
+| `make prod-down` | stop everything |
+| `make prod-restore f=<file>` | restore DB from a backup (§4) |
 ---
 
 ## 3. Permission private key (one-time)
