@@ -2,7 +2,6 @@
 
 Deployed & operated on the server (Ubuntu homelab, Docker Compose, Cloudflare Tunnel). Production live at **https://iam.smana.web.id**.
 
-
 ## Arsitektur singkat
 
 All services run via `docker-compose-prod.yml` within the internal `iam_network`:
@@ -22,34 +21,31 @@ Secrets are managed with SOPS+age. `secrets/prod.enc.env` (encrypted, committed)
 
 
 ---
+## Server prerequisites (once per server)
 
-## 1. First-time setup (sekali per server)
+Install **Docker**, **age**, and **sops**.
 
-Asumsi: Cloudflare Tunnel sudah dibuat (TUNNEL_TOKEN sudah ada di `prod.enc.env`, public
-hostname sudah diarahkan ke `app:9001`).
+SOPS secrets are decrypted with centralized age key at `~/.config/sops/age/keys.txt`
+(sops finds it automatically; one file holds one key per project). Restore it from offline backup / password manager — without it, `prod.enc.env` can't be decrypted.
+
+
+## 1. First-time setup
+
+Requires a Cloudflare Tunnel — TUNNEL_TOKEN set in `prod.enc.env`, public hostname points to `app:9001`.
 
 ```bash
-# 1. Tools
-sudo apt install -y docker.io docker-compose-plugin git age
-# + install sops (binary release aquasecurity)
-
-# 2. Clone repo
+# 1. Clone the repo
 git clone <repo> ~/iam && cd ~/iam
 
-# 3. Age private key (untuk decrypt SOPS) — simpan di server saja, JANGAN commit
-mkdir -p ~/.config/iam
-mv age.key ~/.config/iam/age.key           # dari backup offline / password manager
-echo 'export SOPS_AGE_KEY_FILE=~/.config/iam/age.key' >> ~/.bashrc && source ~/.bashrc
-
-# 4. RSA signing keys → letak di runtime/keys/<kid>/
+# 2. RSA signing keys → place under runtime/keys/<kid>/
 bash scripts/gen_keys.sh iam-key-prod-1
 mkdir -p runtime/keys && mv keys/iam-key-prod-1 runtime/keys/
-#   lalu set permission (lihat §3)
+#   then set permissions (see §3)
 ```
 
-Setelah itu deploy pertama: `make deploy`.
-
+First deploy: `make deploy`.
 ---
+
 
 ## 2. Deploy & ops
 
