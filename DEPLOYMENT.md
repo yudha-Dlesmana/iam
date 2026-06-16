@@ -17,14 +17,14 @@ Internet → Cloudflare Tunnel (outbound — no open ports) → `app:9001`.
 Public hostname `iam.smana.web.id` → Service **HTTP** `app:9001` (set in the Cloudflare dashboard).
 
 
-Secrets are managed with SOPS+age. `secrets/prod.enc.env` (encrypted, committed) → Decrypted to `runtime/.env` (gitignored), which every service reads via `env_file`.
+> Secrets are managed with SOPS+age. `secrets/prod.enc.env` (encrypted, committed) → Decrypted to `runtime/.env` (gitignored), which every service reads via `env_file`.
 ---
 
 ## Server prerequisites (once per server)
 
 Install **Docker**, **age**, and **sops**.
 
-SOPS secrets are decrypted with centralized age key at `~/.config/sops/age/keys.txt`
+> SOPS secrets are decrypted with centralized age key at `~/.config/sops/age/keys.txt`
 (sops finds it automatically; one file holds one key per project). Restore it from offline backup / password manager — without it, `prod.enc.env` can't be decrypted.
 ---
 
@@ -39,10 +39,22 @@ git clone <repo> ~/iam && cd ~/iam
 # 2. RSA signing keys → place under runtime/keys/<kid>/
 bash scripts/gen_keys.sh iam-key-prod-1
 mkdir -p runtime/keys && mv keys/iam-key-prod-1 runtime/keys/
-#   then set permissions (see §3)
+
+# 3. Key permissions: chown to the container uid + restrict
+sudo chown -R 10001:10001 runtime/keys
+sudo find runtime/keys -type d -exec chmod 700 {} \;
+sudo find runtime/keys -type f -name '*.pem' -exec chmod 600 {} \;
 ```
 
 First deploy: `make deploy`.
+
+Verify after deploy (container must be running):
+```bash
+# container can read
+docker exec iam_app cat /app/keys/iam-key-prod-1/public.pem | head -1
+# other host users CANNOT read the private key
+sudo -u nobody cat runtime/keys/iam-key-prod-1/private.pem
+```
 ---
 
 ## 2. Deploy & ops
@@ -74,32 +86,10 @@ make prod-update   # git pull + deploy (for a new version)
 | `make prod-ps` | container status |
 | `make prod-migrate` | run migrations manually |
 | `make prod-down` | stop everything |
-| `make prod-restore f=<file>` | restore DB from a backup (§4) |
+| `make prod-restore f=<file>` | restore DB from a backup (§3) |
 ---
 
-## 3. Permission private key (one-time)
-
-Private RSA (`runtime/keys/<kid>/private.pem`) hanya boleh kebaca user container — uid `10001`
-(user `app` dari `Dockerfile`). Dijalankan **sekali** setelah generate keys, ulangi kalau
-regenerate.
-
-```bash
-# chown ke uid container + restrict
-sudo chown -R 10001:10001 runtime/keys
-sudo find runtime/keys -type d -exec chmod 700 {} \;
-sudo find runtime/keys -type f -name '*.pem' -exec chmod 600 {} \;
-
-# verifikasi container baca
-docker exec iam_app cat /app/keys/iam-key-prod-1/public.pem | head -1   # → -----BEGIN PUBLIC KEY-----
-# verifikasi user host lain TIDAK bisa baca private
-sudo -u nobody cat runtime/keys/iam-key-prod-1/private.pem              # → Permission denied
-```
-
-> `deploy.sh` tidak `chmod` keys, jadi ownership 10001 tidak ke-override.
-
----
-
-## 4. Backup & restore DB
+## 3. Backup & restore DB
 
 ### Backup
 
@@ -134,7 +124,7 @@ Verifikasi: `cat /home/yudha/hdd/backup/iam/backup.log` + `rclone ls r2:iam-back
 
 ---
 
-## 5. Rotasi refresh-secret
+## 4. Rotasi refresh-secret
 
 `JWT_REFRESH_SECRETS` = dict `{kid: secret}` di `secrets/prod.enc.env`;
 `JWT_REFRESH_ACTIVE_KID` = kid penandatangan token baru. Semua kid masih bisa verifikasi →
@@ -153,7 +143,7 @@ logout massal disengaja.
 
 ---
 
-## 6. Host & network hardening
+## 5. Host & network hardening
 
 Postur: port 22 (SSH), 3306 (MySQL), 6379 (Redis), 9001 (app) **tidak ter-expose** ke
 internet (cek: `docker ps` PORTS tanpa `0.0.0.0:`). Akses publik hanya via Cloudflare Tunnel.
@@ -193,7 +183,7 @@ Tindak lanjut: bump dependency yang `fixed`, `make deploy` untuk patch base `pyt
 
 ---
 
-## 7. Admin FE — CORS & cookie
+## 6. Admin FE — CORS & cookie
 
 Admin FE & IAM BE berbagi parent domain `smana.web.id` (FE mis. `admin.smana.web.id`, BE
 `iam.smana.web.id`) — meski tunnel terpisah. Satu parent → refresh cookie bisa di-share
