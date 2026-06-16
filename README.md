@@ -75,7 +75,7 @@ cp .env.example .env
 ```
 
 Fill in (see **Configuration** below). At minimum: `DB_URL`, `TEST_DB_URL`,
-`REDIS_URL`, `JWT_REFRESH_SECRET`.
+`REDIS_URL`, `JWT_REFRESH_SECRETS`.
 
 ### 3. Install dependencies
 
@@ -120,13 +120,10 @@ Settings load from `.env` (see `src/core/config.py`).
 | `DB_URL`, `TEST_DB_URL` | async MySQL DSNs |
 | `REDIS_URL` | Redis DSN |
 | `JWT_KEYS_DIR` | keyset dir (default `keys`) |
-| `JWT_ACTIVE_KID` | key id used to sign (default `iam-key-1`) |
+| `JWT_ACTIVE_KID` | key id used to sign access tokens (default `iam-key-1`) |
 | `JWT_ISSUER` | `iss` claim (default `iam`) |
-| `JWT_REFRESH_SECRET` | HS256 secret for refresh tokens |
-
-> **Note:** `.env.example` is out of date — it still lists the old `JWT_ACCESS_SECRET`.
-> Access tokens now use the RS256 keyset (`JWT_KEYS_DIR` / `JWT_ACTIVE_KID`); there is
-> no `JWT_ACCESS_SECRET`.
+| `JWT_REFRESH_SECRETS` | JSON dict of versioned HS256 secrets e.g. `{"v1":"<hex>"}` |
+| `JWT_REFRESH_ACTIVE_KID` | kid used to sign new refresh tokens (default `v1`) |
 
 ## API
 
@@ -194,4 +191,4 @@ Tests use `TEST_DB_URL` (tables created/dropped per test) and Redis db 15.
 
 ## Roadmap
 
-See [TODO.md](TODO.md) — audit log and secrets management are deferred.
+See [TODO.md](TODO.md) for pending features: Google OAuth and FE cross-domain auth gate.
