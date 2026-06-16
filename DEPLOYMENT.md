@@ -75,7 +75,7 @@ make  prod-backup
 make prod-restore f=/home/yudha/hdd/backup/iam/<file>.sql.gz
 ```
 
-`restore-db.sh` ask for confirmation `yes`, auto-backs up the current state first (safety net), then restores.
+`restore-db.sh` ask for confirmation `yes`, auto-backs up the current state first (safety net), then restores -- a restore **overwrites** the current DB
 
 ### Cron (saat ini OFF)
 
