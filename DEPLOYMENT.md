@@ -185,23 +185,21 @@ docker stop adminer
 
 ## 5. Admin FE — CORS & cookie
 
-Admin FE & IAM BE berbagi parent domain `smana.web.id` (FE mis. `admin.smana.web.id`, BE
-`iam.smana.web.id`) — meski tunnel terpisah. Satu parent → refresh cookie bisa di-share
-**first-party** (tahan blokir third-party cookie).
+
+Admin FE & IAM BE share the parent domain `smana.web.id` (FE e.g. `admin.smana.web.id`, BE `iam.smana.web.id`) — even though the tunnels are separate. Same parent → the refresh cookie can be shared **first-party** (resistant to third-party cookie blocking).
+
 
 ```bash
 sops secrets/prod.enc.env
-#    FRONTEND_URLs=https://admin.smana.web.id      ← origin FE (CORS allow-list)
-#    COOKIE_DOMAIN=.smana.web.id                   ← cookie dipakai semua subdomain
+#    FRONTEND_URLs=https://admin.smana.web.id      ← FE origin (CORS allow-list)
+#    COOKIE_DOMAIN=.smana.web.id                   ← cookie used across all subdomainsclear
 make prod-update
 ```
 
-- `FRONTEND_URLs` **harus exact match** scheme+host (`https://`, bukan `http://`). Mismatch →
-  preflight lolos tapi request asli kena CORS.
-- FE panggil IAM dengan `credentials: 'include'` di semua call auth, pakai prefix `/v1`.
+- `FRONTEND_URLs` **must exact-match** scheme+host (https://, not http://). A mismatch → preflight passes but the actual request fails CORS.
+- The FE calls IAM with credentials: 'include' on every auth call, using the /v1 prefix.
 
-> Cloudflare Access (gate SSO di depan admin FE) opsional — RBAC + argon2 sudah jadi proteksi
-> utama.
+> Cloudflare Access (an SSO gate in front of the admin FE) is optional — the app's RBAC + argon2 are the primary protection.
 
 ---
 
