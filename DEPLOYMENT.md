@@ -77,19 +77,19 @@ make prod-restore f=/home/yudha/hdd/backup/iam/<file>.sql.gz
 
 `restore-db.sh` ask for confirmation `yes`, auto-backs up the current state first (safety net), then restores -- a restore **overwrites** the current DB
 
-### Cron (saat ini OFF)
+### Activate Cron (currently OFF)
 
-Prasyarat: timezone server = Asia/Jakarta (`sudo timedatectl set-timezone Asia/Jakarta`),
-partisi ter-mount, rclone remote `r2` ter-config.
+Prerequisites: server timezone = Asia/Jakarta (`sudo timedatectl set-timezone Asia/Jakarta`),
+partition mounted, rclone remote `r2` configured.
 
 ```bash
 crontab -e
-# minggu jam 2 pagi:
+# example: sunday at 2 AM:
 PATH=/usr/local/bin:/usr/bin:/bin
 0 2 * * 0 /usr/bin/bash /home/yudha/iam/scripts/backup-db.sh >> /home/yudha/hdd/backup/iam/backup.log 2>&1
 ```
 
-Verifikasi: `cat /home/yudha/hdd/backup/iam/backup.log` + `rclone ls r2:iam-backups/iam`.
+Verify: `cat /home/yudha/hdd/backup/iam/backup.log` + `rclone ls r2:iam-backups/iam`.
 
 ---
 
