@@ -9,7 +9,7 @@ pydantic-settings==2.14.0           # Load config from .env files
 pydantic[email]==2.13.3             # EmailStr support (installs email-validator)
 
 # File upload
-python-multipart==0.0.27            # Form data / file uploads
+python-multipart==0.0.30            # Form data / file uploads
 
 # Database
 sqlalchemy==2.0.49                  # ORM
@@ -21,7 +21,7 @@ PyMySQL==1.1.3                      # Sync MySQL driver (used by Alembic)
 redis[hiredis]==7.4.0               # redis client + C parser
 
 # Security
-pyjwt[crypto]==2.12.0               # JWT tokens
+pyjwt[crypto]==2.13.0               # JWT tokens
 argon2-cffi==25.1.0                 # Password hashing
 
 # HTTP client (for calling external APIs)

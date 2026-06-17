@@ -93,38 +93,38 @@ Verify: `cat /home/yudha/hdd/backup/iam/backup.log` + `rclone ls r2:iam-backups/
 
 ---
 
-## 3. Rotasi refresh-secret
+## 3. Refresh-secret rotation
 
-`JWT_REFRESH_SECRETS` = dict `{kid: secret}` di `secrets/prod.enc.env`;
-`JWT_REFRESH_ACTIVE_KID` = kid penandatangan token baru. Semua kid masih bisa verifikasi →
-rotasi tanpa logout massal.
+`JWT_REFRESH_SECRETS` = a `{kid: secret}` dict in `secrets/prod.enc.env`;
+`JWT_REFRESH_ACTIVE_KID` = the kid (key id) that signs new tokens. All kids can still verify → rotate without mass logout.
 
 ```bash
 sops secrets/prod.enc.env
-#   JWT_REFRESH_SECRETS={"v1":"<lama>","v2":"<baru>"}   # tambah kid baru
-#   JWT_REFRESH_ACTIVE_KID=v2                            # geser active
+#   JWT_REFRESH_SECRETS={"v1":"<old>","v2":"<new>"}   # add the new kid
+#   JWT_REFRESH_ACTIVE_KID=v2                         # switch active
 make prod-update
-# tunggu >7 hari (REFRESH_TTL), lalu buang v1.
+# wait >7 days (REFRESH_TTL), then drop v1.
 ```
 
-Emergency (secret bocor): buang kid lama langsung (jangan disisakan) → token lama invalid,
-logout massal disengaja.
+**Emergency** (secret leaked): drop the old kid immediately → old tokens become invalid, mass logout is intentional.
 
 ---
 
 ## 4. Host & network hardening
 
-Postur: port 22 (SSH), 3306 (MySQL), 6379 (Redis), 9001 (app) **tidak ter-expose** ke
-internet (cek: `docker ps` PORTS tanpa `0.0.0.0:`). Akses publik hanya via Cloudflare Tunnel.
+Posture: ports 22 (SSH), 3306 (MySQL), 6379 (Redis), 9001 (app) are **not exposed** to the internet. Verify:
+```bash
+docker ps --format "table {{.Names}}\t{{.Ports}}"   # PORTS without "0.0.0.0:" → not exposed
+```
 
 ### Firewall (ufw)
 
 ```bash
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
-sudo ufw allow OpenSSH          # WAJIB sebelum enable — biar tidak terkunci
+sudo ufw allow OpenSSH          # REQUIRED before enable 
 sudo ufw enable
-sudo ufw status verbose
+sudo ufw status verbose         # verify -> "Status: active", deny incoming, 22 ALLOW
 ```
 
 ### Fail2ban (SSH brute-force)
@@ -132,24 +132,55 @@ sudo ufw status verbose
 ```bash
 sudo apt install fail2ban
 sudo systemctl enable --now fail2ban
-sudo fail2ban-client status sshd
+sudo systemctl is-active fail2ban
+sudo fail2ban-client status sshd      # verify → jail running, shows banned IPs
 ```
 
 ### Auto security updates
 
 ```bash
 sudo apt install unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades   # pilih Yes
+sudo dpkg-reconfigure -plow unattended-upgrades
+sudo systemctl is-active unattended-upgrades
+sudo apt-config dump APT::Periodic::Unattended-Upgrade
 ```
 
-### Scan CVE image (Trivy) — rutin bulanan
+### CVE image scan (Trivy)
 
+Install Trivy (once, via the aquasecurity apt repo):
+```bash
+sudo apt install -y wget gnupg
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+  | sudo tee /etc/apt/sources.list.d/trivy.list
+sudo apt update && sudo apt install -y trivy
+```
+
+Scan:
 ```bash
 trivy image iam:prod --severity HIGH,CRITICAL
 ```
 
-Tindak lanjut: bump dependency yang `fixed`, `make deploy` untuk patch base `python:3.11-slim`.
+Follow-up: bump fixed dependencies (in requirements-*.txt), then `make deploy` to rebuild
 
+patch the python:3.11-slim base.
+
+### Access DB via Adminer (on-demand)
+```bash
+docker run --rm -d --name adminer \
+  --network iam_network \
+  -p 127.0.0.1:8080:8080 \
+  adminer:standalone
+```
+access via SSH tunnel
+```bash
+ssh -L 8080:localhost:8080 yudha@homelab
+# open http://localhost:8080 
+```
+stop when done
+```bash
+docker stop adminer
+```
 ---
 
 ## 5. Admin FE — CORS & cookie
