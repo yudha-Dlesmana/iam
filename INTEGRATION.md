@@ -1,18 +1,15 @@
 # Integrating with the IAM service
 
-How to consume this IAM from your apps: **downstream backend services** that verify
-tokens, and **frontends** that log users in and call those services.
+How to consume this IAM from your apps: **downstream backend services** that verify tokens, and **frontends** that log users in and call those services.
 
-The IAM issues two tokens. They have different jobs, lifetimes, and trust models:
+IAM issues two tokens with different jobs, lifetimes, and trust models:
 
 | Token | Algo | TTL | Who verifies it | Where it lives |
 |-------|------|-----|-----------------|----------------|
-| **Access** | RS256 (public verify via JWKS) | 15 min | every service, locally | client (memory / storage) |
+| **Access** | RS256 (public verify via JWKS) | 15 min | every service, locally | client (in memory) |
 | **Refresh** | HS256 (secret, IAM only) | 7 days | IAM only | httpOnly cookie (set by IAM) |
 
-Core idea: services **verify the access token locally** using IAM's public key (JWKS).
-No shared secret, no per-request callback to IAM. Refresh is strictly between the
-client and IAM.
+Core idea: services **verify the access token locally** using IAM's public key (JWKS). No shared secret, no per-request callback to IAM. Refresh is strictly between the client and IAM.
 
 ---
 
@@ -21,19 +18,20 @@ client and IAM.
 Nothing stores the token except the client.
 
 ```
-┌──────────────────┐
-│ CLIENT (browser) │  access token  -> in memory / app state
-│                  │  refresh token -> httpOnly cookie (browser-managed, set by IAM)
-└────────┬─────────┘
-         │  Authorization: Bearer <access>   (every API call)
-    ┌────┴────┬──────────────┐
-    ▼         ▼              ▼
-┌───────┐ ┌────────┐  ┌──────────┐
-│  IAM  │ │ Billing│  │ Shipping │   <- none of these store tokens.
-└───────┘ └────────┘  └──────────┘      they verify per-request, then forget.
+             ┌──────────────────┐
+             │ CLIENT (browser) │   access token  → in memory
+             └─────────┬────────┘   refresh token → httpOnly cookie (set by IAM)
+                       │
+                       │  Authorization: Bearer <access>   (every API call)
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+     ┌─────────┐  ┌─────────┐  ┌──────────┐
+     │   IAM   │  │ Billing │  │ Shipping │
+     └─────────┘  └─────────┘  └──────────┘
+     none of these store tokens — verify per request, then forget.
 ```
 
-- **Backend services do not store tokens.** They receive one per request, verify it, respond.
+- **Backend services don't store tokens.** They receive one per request, verify it, respond.
 - The **client** holds the access token and sends it on every call.
 - IAM stores only a **session** in Redis (for refresh), never the access token.
 
@@ -52,10 +50,8 @@ Content-Type: application/json
    + Set-Cookie: refresh_token=...; HttpOnly; Secure; SameSite=None
 ```
 
-- Store the **access token in memory** (a variable / app state). Avoid `localStorage`
-  if you can — it's readable by XSS.
-- The **refresh token is a cookie** you never touch in JS (`HttpOnly`). The browser
-  sends it back to IAM automatically.
+- Store the **access token in memory** (a variable / app state). Avoid `localStorage` — it's readable by XSS.
+- The **refresh token is a cookie** you never touch in JS (`HttpOnly`). The browser sends it back to IAM automatically.
 
 ### Calling a service
 
@@ -68,65 +64,62 @@ Authorization: Bearer <access token>
 
 ```
 1. billing.com -> 401 (token expired)
-2. fetch('https://iam.com/v1/auth/refresh', {
-       method: 'POST',
-       credentials: 'include'        // <- REQUIRED: sends the refresh cookie
-   })
-   -> 200 { access_token: <new> }    // + new refresh cookie
+2. POST https://iam.com/v1/auth/refresh   (credentials: 'include' — sends the refresh cookie)
+   -> 200 { access_token: <new> }         (+ new refresh cookie)
 3. retry the original request with the new access token
 ```
 
 The user only logs in again when the **refresh token expires (7 days)** or is revoked.
 
-### Axios interceptor (single-flight refresh)
+### Fetch wrapper (single-flight refresh)
 
-Refresh rotates the token. If many requests get 401 at once and each calls
-`/refresh`, the older refresh token gets reused → IAM treats it as theft and
-**revokes every session**. So collapse concurrent refreshes into one:
+Refresh rotates the token. If many requests get 401 at once and each calls `/refresh`, the older refresh token gets reused → IAM treats it as theft and **revokes every session**. So collapse concurrent refreshes into one ("single-flight"):
 
 ```js
-import axios from 'axios';
+// api.js — minimal fetch wrapper, no dependencies
+const IAM = 'https://iam.com';
+const BILLING = 'https://billing.com';
 
-const api = axios.create({ baseURL: 'https://billing.com' });
-let accessToken = null;            // kept in memory
-let refreshing = null;             // single-flight guard
+let accessToken = null;   // kept in memory
+let refreshing = null;    // single-flight guard
 
-api.interceptors.request.use((cfg) => {
-  if (accessToken) cfg.headers.Authorization = `Bearer ${accessToken}`;
-  return cfg;
-});
-
-api.interceptors.response.use(
-  (res) => res,
-  async (err) => {
-    const original = err.config;
-    if (err.response?.status !== 401 || original._retried) {
-      return Promise.reject(err);
-    }
-    original._retried = true;
-
-    // one refresh shared by all waiting requests
-    refreshing ??= fetch('https://iam.com/v1/auth/refresh', {
-      method: 'POST',
-      credentials: 'include',
+function refresh() {
+  // all concurrent 401s await the same promise
+  refreshing ??= fetch(`${IAM}/v1/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',          // sends the refresh cookie
+  })
+    .then((r) => {
+      if (!r.ok) throw new Error('refresh failed');
+      return r.json();
     })
-      .then((r) => {
-        if (!r.ok) throw new Error('refresh failed');
-        return r.json();
-      })
-      .then((d) => { accessToken = d.access_token; })
-      .finally(() => { refreshing = null; });
+    .then((d) => { accessToken = d.access_token; })
+    .finally(() => { refreshing = null; });
+  return refreshing;
+}
 
+export async function apiFetch(path, options = {}) {
+  const call = () =>
+    fetch(`${BILLING}${path}`, {
+      ...options,
+      headers: {
+        ...options.headers,
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+    });
+
+  let res = await call();
+  if (res.status === 401) {
     try {
-      await refreshing;
+      await refresh();               // shared across all waiting requests
     } catch {
-      // refresh expired / revoked -> back to login
-      window.location.href = '/login';
-      return Promise.reject(err);
+      window.location.href = '/login';   // refresh expired / revoked
+      throw new Error('session expired');
     }
-    return api(original);          // retry with new token
-  },
-);
+    res = await call();              // retry once with the new token
+  }
+  return res;
+}
 ```
 
 ### Logout
@@ -142,8 +135,7 @@ Both clear the refresh cookie. Drop the in-memory access token client-side too.
 
 ## Part 2 — Backend service: verifying the access token
 
-Your service never talks to IAM per request. It fetches IAM's **public keys once**
-(JWKS), caches them, and verifies tokens offline.
+Your service never talks to IAM per request. It fetches IAM's **public keys once** (JWKS), caches them, and verifies tokens offline.
 
 ### What to check on every token
 
@@ -168,7 +160,7 @@ IAM_JWKS_URL = "https://iam.com/.well-known/jwks.json"
 JWT_ISSUER = "iam"            # must match IAM settings.JWT_ISSUER
 SERVICE_PREFIX = "billing"    # this service
 
-_jwks = PyJWKClient(IAM_JWKS_URL, cache_keys=True)   # caches keys + refetches new kid
+_jwks = PyJWKClient(IAM_JWKS_URL, cache_keys=True)   # caches keys + refetches on new kid
 _bearer = HTTPBearer()
 
 
@@ -212,79 +204,41 @@ async def list_invoices():
 
 ### Registering a new service in IAM
 
-Before `billing` tokens carry `billing` in `aud` / `permissions`, register it in IAM:
+Before `billing` tokens carry `billing` in `aud` / `permissions`, register it via the admin API (all CRUD endpoints exist — needs the matching `iam.*.manage` permission):
 
-1. Seed the service — `scripts/seeder/service.py` (name `billing`).
-2. Seed permissions — `scripts/seeder/permission.py` (`billing.invoice.read`, …).
-3. Grant to a role — `scripts/seeder/role_permission.py`.
+1. Create the service — `POST /v1/services` `{ "name": "billing" }`.
+2. Create permissions — `POST /v1/permissions` (`billing.invoice.read`, …).
+3. Grant to a role — `POST /v1/roles/{id}/permissions` `{ "permission_ids": [...] }`.
 
-A user whose role holds any `billing.*` permission will automatically get `billing`
-in their token's `aud` and the relevant entries in `permissions`. One token serves
-every service the user has access to; each service reads only its own prefix and
-ignores the rest.
+> For first-time/static bootstrap you can also use the seeders
+> (`scripts/seeder/service.py`, `permission.py`, `role_permission.py`).
+
+A user whose role holds any `billing.*` permission automatically gets `billing` in their token's `aud` and the relevant `permissions`. One token serves every service the user has access to; each service reads only its own prefix and ignores the rest.
 
 ---
 
-## Part 3 — Different domains (chosen topology)
+## Part 3 — Domains & the refresh cookie
 
-Apps and IAM live on **unrelated domains**:
-
-```
-app-a.com      app-b.com      iam.com
-```
-
-This works without sharing cookies across domains, because **only IAM reads the
-refresh cookie**.
-
-### How the refresh cookie behaves
-
-- IAM sets the refresh cookie **host-only** (`iam.com`). It is **not** shared with
-  `app-a.com` or `app-b.com` — and doesn't need to be.
-- When `app-a.com` calls `iam.com/v1/auth/refresh` with `credentials: 'include'`,
-  the browser attaches the `iam.com` cookie. That's all IAM needs.
-
-### Required configuration
-
-**IAM `.env`:**
+Put the frontend and IAM under the **same parent domain** — FE and IAM on sibling subdomains (e.g. `app.company.com` + `iam.company.com`):
 
 ```bash
-# host-only cookie: leave COOKIE_DOMAIN empty so the cookie binds to iam.com only
-COOKIE_DOMAIN=
-
-# every frontend origin that calls IAM (CORS, credentials require explicit origins)
-FRONTEND_URLs=https://app-a.com,https://app-b.com
-
-# production => Secure + SameSite=None (set by code when ENV != development)
-ENV=production
+# IAM .env
+COOKIE_DOMAIN=.company.com          # cookie shared first-party across subdomains
+FRONTEND_URLs=https://app.company.com
+ENV=production                      # cookie flags: HttpOnly; Secure; SameSite=None
 ```
 
-Cookie flags the IAM applies in production (`src/routers/auth.py`):
-
-```
-HttpOnly; Secure; SameSite=None; Path=/; Domain=<host-only>
-```
-
-- `SameSite=None` + `Secure` is **mandatory** for cross-site (HTTPS required).
-- `allow_credentials=True` with an explicit origin list (no `*`) — already configured
-  in `src/core/cors.py`.
-
-**Frontend:** every call to IAM that needs the cookie must send credentials:
+- The refresh cookie is **first-party** for every `*.company.com` subdomain → immune to browser third-party-cookie blocking.
+- `FRONTEND_URLs` must list each FE origin exactly (CORS needs explicit origins, no `*`).
+- Every IAM call that needs the cookie must send credentials:
 
 ```js
-fetch('https://iam.com/v1/auth/refresh', { method: 'POST', credentials: 'include' });
+fetch('https://iam.company.com/v1/auth/refresh', { method: 'POST', credentials: 'include' });
 // same for /login (to receive the cookie), /logout, /all-logout
 ```
 
-### Trade-off you are accepting
-
-`SameSite=None` cookies are **third-party** cookies in this topology. Modern browsers
-(Chrome's third-party cookie phase-out) increasingly block them, which can make
-`/refresh` fail silently.
-
-If that becomes a problem, the robust fix is to move everything under one parent
-domain (`app-a.company.com`, `iam.company.com`) and set `COOKIE_DOMAIN=.company.com`
-— then the refresh cookie is first-party and immune to the block. Until then,
-host-only + `SameSite=None` is the supported cross-domain setup.
+> Keeping everything under one parent domain avoids the third-party-cookie problems that hit
+> unrelated domains (where `SameSite=None` cookies get blocked).
 
 ---
 
@@ -294,17 +248,18 @@ host-only + `SameSite=None` is the supported cross-domain setup.
 |------------|---------|
 | Log a user in | `POST /v1/auth/login`, store access in memory, cookie set automatically |
 | Call a service | `Authorization: Bearer <access>` |
-| Handle 401 | `POST /v1/auth/refresh` (`credentials: include`), retry once |
+| Handle 401 | `POST /v1/auth/refresh` (`credentials: 'include'`), retry once |
 | Log out | `POST /v1/auth/logout` (this device) / `all-logout` (all) |
 | Verify a token in my service | fetch JWKS once, check `iss` / `aud` / `exp` / `permissions` |
 | Add my service to IAM | seed service + permissions + role grant |
-| Run apps on different domains | `COOKIE_DOMAIN=`, list origins in `FRONTEND_URLs`, send `credentials` |
+| Run apps cross-domain | shared parent domain + `COOKIE_DOMAIN=.parent` (recommended) |
 
 ### Things that trip people up
 
 - **Backends don't store tokens** — the client does. Backends only verify.
-- **One token covers all services** — not one token per service. Each service reads its prefix.
+- **One token covers all services** — not one per service. Each service reads its prefix.
 - **Permissions are set on the Role, not the User** — a user just picks a role.
 - **Refresh only ever goes to IAM** — downstream services have no refresh secret.
 - **Concurrent refresh = reuse detection = full logout** — use single-flight refresh.
-- **Access tokens are bearer** — not bound to a device; rely on the 15-min TTL and revocation.
+- **Access tokens are bearer** — not bound to a device; rely on the 15-min TTL + revocation.
+```
