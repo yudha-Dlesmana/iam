@@ -1,8 +1,8 @@
-name: starter
+name: iam_local
 services:
   mysql:
     image: mysql:8.0
-    container_name: starter_mysql
+    container_name: iam_mysql
     restart: unless-stopped
     env_file:
       - .env
@@ -11,7 +11,6 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-
     ports:
       - "9306:3306"
     volumes:
@@ -26,7 +25,7 @@ services:
 
   adminer:
     image: adminer:latest
-    container_name: starter_adminer
+    container_name: iam_adminer
     restart: unless-stopped
     ports:
       - "9080:8080"
@@ -36,7 +35,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: starter_redis
+    container_name: iam_redis
     restart: unless-stopped
     ports:
       - "9379:6379"
@@ -50,7 +49,7 @@ services:
 
   redisinsight:
     image: redis/redisinsight:latest
-    container_name: starter_redisinsight
+    container_name: iam_redisinsight
     restart: unless-stopped
     ports:
       - "9540:5540"
@@ -64,4 +63,4 @@ volumes:
 
 networks:
   default:
-    name: starter_network
+    name: iam_network_local
