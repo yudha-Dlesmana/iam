@@ -4,7 +4,7 @@ start:
 	docker compose -f docker-compose-dev.yml up  -d
 
 stop:
-	docker compose stop
+	docker compose -f docker-compose-dev.yml stop
 
 reset:
-	docker compose down -v
+	docker compose -f docker-compose-dev.yml down -v
